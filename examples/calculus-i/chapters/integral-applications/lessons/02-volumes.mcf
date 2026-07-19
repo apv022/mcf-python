@@ -1,0 +1,99 @@
+---
+id: volumes
+title: "Volumes of solids"
+description: "Slicing converts three-dimensional volume into an integral of cross-sectional area."
+---
+
+:::mcf-activity
+type: notes
+id: volumes-notes
+title: "Learn"
+:::
+
+# Volumes of solids
+
+For disks or washers perpendicular to the $x$-axis,
+
+$$
+V=\pi\int_a^b\left(R(x)^2-r(x)^2\right)dx.
+$$
+
+For cylindrical shells,
+
+$$
+V=2\pi\int_a^b (\text{radius})(\text{height})\,dx.
+$$
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: volumes-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: multiple_select
+prompt: |
+  Which are standard single-variable volume methods?
+options:
+  - id: disk
+    text: "disk/washer"
+  - id: shell
+    text: "shell"
+  - id: limit
+    text: "limit law"
+  - id: cross
+    text: "known cross-sections"
+
+answer: ["disk", "shell", "cross"]
+hint: "Review the key rule in the notes."
+explanation: "The selected answer follows directly from the definition or rule above."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: volumes-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Slicing converts three-dimensional volume into an integral of cross-sectional area."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Volumes of solids** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

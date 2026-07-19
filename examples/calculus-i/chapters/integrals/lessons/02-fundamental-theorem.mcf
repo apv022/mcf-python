@@ -1,0 +1,92 @@
+---
+id: fundamental-theorem
+title: "The Fundamental Theorem of Calculus"
+description: "The Fundamental Theorem connects accumulation and differentiation."
+---
+
+:::mcf-activity
+type: notes
+id: fundamental-theorem-notes
+title: "Learn"
+:::
+
+# The Fundamental Theorem of Calculus
+
+If
+
+$$
+F(x)=\int_a^x f(t)\,dt,
+$$
+
+and $f$ is continuous, then $F'(x)=f(x)$.
+
+Also, if $F'=f$, then
+
+$$
+\int_a^b f(x)\,dx=F(b)-F(a).
+$$
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: fundamental-theorem-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: numeric
+prompt: |
+  Evaluate $\int_0^2 3x^2\,dx$.
+answer: 8
+tolerance: 0.001
+hint: "An antiderivative is $x^3$."
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: fundamental-theorem-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "The Fundamental Theorem connects accumulation and differentiation."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **The Fundamental Theorem of Calculus** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

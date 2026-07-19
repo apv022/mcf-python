@@ -1,0 +1,11 @@
+mcf: '1.0'
+id: mcf-showcase
+title: 'MCF 1.0 Showcase'
+language: en
+description: 'A tour of every MCF 1.0 activity and question type.'
+authors: ['MCF Project']
+license: CC0-1.0
+version: '1.0.0'
+cover: assets/images/cover.svg
+chapters:
+  - source: chapters/foundations

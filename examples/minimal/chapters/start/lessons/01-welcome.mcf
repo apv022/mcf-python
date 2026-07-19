@@ -1,0 +1,16 @@
+---
+id: welcome
+title: "Welcome"
+---
+
+:::mcf-activity
+type: notes
+id: welcome-notes
+title: "Your first lesson"
+:::
+
+# Hello
+
+This is a valid, minimal MCF lesson. Mark the notes complete when you are ready.
+
+:::mcf-end

@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcf-compiler"
+version = "1.0.0"
+description = "Python compiler for Modular Curriculum Format (MCF) 1.0 courses"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "MCF contributors" }]
+keywords = ["mcf", "education", "course", "compiler", "offline"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
+]
+dependencies = [
+  "bleach>=6.2,<7",
+  "latex2mathml>=3.77,<4",
+  "markdown-it-py>=3.0,<5",
+  "PyYAML>=6.0.2,<7",
+]
+
+[project.urls]
+Homepage = "https://github.com/apv022/mcf-python"
+Specification = "https://github.com/apv022/MCF-Specification"
+
+[project.scripts]
+mcf = "mcf_compiler.cli:main"
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2.2",
+  "mypy>=1.15",
+  "pytest>=8.3",
+  "ruff>=0.11",
+  "twine>=6.1",
+  "types-bleach>=6.2",
+  "types-PyYAML>=6.0.12",
+]
+
+[dependency-groups]
+dev = [
+  "build>=1.2.2",
+  "mypy>=1.15",
+  "pytest>=8.3",
+  "ruff>=0.11",
+  "twine>=6.1",
+  "types-bleach>=6.2",
+  "types-PyYAML>=6.0.12",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcf_compiler"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/docs", "/README.md", "/LICENSE", "/pyproject.toml"]
+exclude = ["/.gitignore"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["mcf_compiler"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["src"]

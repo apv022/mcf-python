@@ -1,0 +1,88 @@
+---
+id: limit-intuition
+title: "The idea of a limit"
+description: "A limit describes the value a function approaches, whether or not the function equals that value."
+---
+
+:::mcf-activity
+type: notes
+id: limit-intuition-notes
+title: "Learn"
+:::
+
+# The idea of a limit
+
+We write
+
+$$
+\lim_{x\to a}f(x)=L
+$$
+
+when $f(x)$ can be made arbitrarily close to $L$ by taking $x$ sufficiently close to $a$.
+
+One-sided limits distinguish approach from the left and right. A two-sided limit exists only when both one-sided limits agree.
+
+@[video](youtube:WUvTyaaNkzM "The essence of calculus - external video")
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: limit-intuition-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: true_false
+prompt: |
+  A limit can exist even when the function is undefined at the limiting input.
+answer: true
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: limit-intuition-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "A limit describes the value a function approaches, whether or not the function equals that value."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **The idea of a limit** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

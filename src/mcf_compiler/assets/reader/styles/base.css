@@ -1,0 +1,83 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  line-height: 1.65;
+}
+a {
+  color: var(--brand-dark);
+}
+img,
+video,
+audio {
+  max-width: 100%;
+}
+img {
+  height: auto;
+}
+figure img {
+  display: block;
+  width: auto;
+  margin-inline: auto;
+  object-fit: contain;
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button,
+.button {
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--brand);
+  color: white;
+  padding: 0.7rem 1rem;
+  font-weight: 750;
+  cursor: pointer;
+  text-decoration: none;
+}
+button:hover,
+.button:hover {
+  background: var(--brand-dark);
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #f1b941;
+  outline-offset: 3px;
+}
+.hidden {
+  display: none !important;
+}
+.eyebrow {
+  color: var(--brand);
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+pre {
+  overflow: auto;
+  padding: 1rem;
+  background: #132634;
+  color: #e7f5f5;
+  border-radius: 0.5rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  border: 1px solid var(--line);
+  padding: 0.55rem;
+  text-align: left;
+}
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+}

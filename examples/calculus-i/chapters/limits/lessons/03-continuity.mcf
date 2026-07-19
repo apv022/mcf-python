@@ -1,0 +1,95 @@
+---
+id: continuity
+title: "Continuity and the Intermediate Value Theorem"
+description: "Continuity means the function value agrees with its limiting behavior."
+---
+
+:::mcf-activity
+type: notes
+id: continuity-notes
+title: "Learn"
+:::
+
+# Continuity and the Intermediate Value Theorem
+
+A function is continuous at $a$ when:
+
+1. $f(a)$ exists;
+2. $\lim_{x\to a}f(x)$ exists;
+3. $\lim_{x\to a}f(x)=f(a)$.
+
+The Intermediate Value Theorem says a continuous function takes every value between $f(a)$ and $f(b)$ on $[a,b]$.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: continuity-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: multiple_select
+prompt: |
+  Select all requirements for continuity at $x=a$.
+options:
+  - id: value
+    text: "$f(a)$ exists"
+  - id: limit
+    text: "The limit exists"
+  - id: equal
+    text: "The limit equals $f(a)$"
+  - id: derivative
+    text: "The derivative exists"
+
+answer: ["value", "limit", "equal"]
+hint: "Review the key rule in the notes."
+explanation: "The selected answer follows directly from the definition or rule above."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: continuity-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Continuity means the function value agrees with its limiting behavior."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Continuity and the Intermediate Value Theorem** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

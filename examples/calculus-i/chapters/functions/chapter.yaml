@@ -1,0 +1,7 @@
+id: functions
+title: 'Functions and Models'
+description: 'Functions, representations, transformations, and inverse relationships'
+lessons:
+  - lessons/01-functions-and-models.mcf
+  - lessons/02-transformations-and-composition.mcf
+  - lessons/03-inverse-and-exponential-models.mcf

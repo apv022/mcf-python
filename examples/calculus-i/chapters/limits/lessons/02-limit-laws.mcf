@@ -1,0 +1,88 @@
+---
+id: limit-laws
+title: "Limit laws and algebraic techniques"
+description: "Limit laws reduce many problems to substitution after algebraic simplification."
+---
+
+:::mcf-activity
+type: notes
+id: limit-laws-notes
+title: "Learn"
+:::
+
+# Limit laws and algebraic techniques
+
+If component limits exist, limits distribute across sums, products, and quotients with nonzero limiting denominator.
+
+A removable indeterminate form often simplifies by factoring:
+
+$$
+\lim_{x\to 2}\frac{x^2-4}{x-2}=\lim_{x\to2}(x+2)=4.
+$$
+
+The original expression is undefined at $x=2$, but the limit concerns nearby values.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: limit-laws-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: numeric
+prompt: |
+  Evaluate $\lim_{x\to2}(x^2-4)/(x-2)$.
+answer: 4
+tolerance: 0.001
+hint: "Factor the numerator."
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: limit-laws-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Limit laws reduce many problems to substitution after algebraic simplification."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Limit laws and algebraic techniques** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

@@ -1,0 +1,7 @@
+id: integral-applications
+title: 'Applications and Synthesis'
+description: 'Area, volume, average value, and cumulative review'
+lessons:
+  - lessons/01-area-between-curves.mcf
+  - lessons/02-volumes.mcf
+  - lessons/03-course-synthesis.mcf

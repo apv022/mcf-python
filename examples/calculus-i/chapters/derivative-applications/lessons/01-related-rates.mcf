@@ -1,0 +1,93 @@
+---
+id: related-rates
+title: "Related rates"
+description: "Related-rates problems differentiate an equation connecting changing quantities."
+---
+
+:::mcf-activity
+type: notes
+id: related-rates-notes
+title: "Learn"
+:::
+
+# Related rates
+
+A spherical balloon has volume
+
+$$
+V=\frac{4}{3}\pi r^3.
+$$
+
+Differentiating with respect to time gives
+
+$$
+\frac{dV}{dt}=4\pi r^2\frac{dr}{dt}.
+$$
+
+The workflow is: define variables, write one relation, differentiate with respect to time, then substitute the instant-specific data.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: related-rates-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: numeric
+prompt: |
+  If $A=\pi r^2$, $r=3$, and $dr/dt=2$, find $dA/dt$ as a multiple of $\pi$.
+answer: 12
+tolerance: 0.001
+hint: |
+  Differentiate: $dA/dt=2\pi r\,dr/dt$.
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: related-rates-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Related-rates problems differentiate an equation connecting changing quantities."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Related rates** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

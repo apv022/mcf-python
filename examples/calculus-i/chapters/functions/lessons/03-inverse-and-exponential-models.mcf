@@ -1,0 +1,91 @@
+---
+id: inverse-and-exponential-models
+title: "Inverse, exponential, and logarithmic models"
+description: "Inverse functions reverse one-to-one relationships; exponentials model proportional growth."
+---
+
+:::mcf-activity
+type: notes
+id: inverse-and-exponential-models-notes
+title: "Learn"
+:::
+
+# Inverse, exponential, and logarithmic models
+
+An inverse satisfies
+
+$$
+f^{-1}(f(x))=x.
+$$
+
+Exponential growth has the form $A(t)=A_0e^{kt}$. Taking logarithms isolates an exponent:
+
+$$
+\ln(A/A_0)=kt.
+$$
+
+A logarithm is an inverse operation, not a cancellation trick without domain conditions.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: inverse-and-exponential-models-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: short_answer
+prompt: |
+  What function is the inverse of $e^x$?
+answer: "ln(x)"
+hint: "Use the natural logarithm notation."
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: inverse-and-exponential-models-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Inverse functions reverse one-to-one relationships; exponentials model proportional growth."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Inverse, exponential, and logarithmic models** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

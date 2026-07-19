@@ -1,0 +1,7 @@
+id: integrals
+title: 'Integrals'
+description: 'Accumulation, antiderivatives, and the Fundamental Theorem'
+lessons:
+  - lessons/01-riemann-sums.mcf
+  - lessons/02-fundamental-theorem.mcf
+  - lessons/03-integration-techniques.mcf

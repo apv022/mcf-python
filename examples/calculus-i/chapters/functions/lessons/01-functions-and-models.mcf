@@ -1,0 +1,95 @@
+---
+id: functions-and-models
+title: "Functions and mathematical models"
+description: "A function assigns exactly one output to each allowed input. Models connect symbolic rules to measurable quantities."
+---
+
+:::mcf-activity
+type: notes
+id: functions-and-models-notes
+title: "Learn"
+:::
+
+# Functions and mathematical models
+
+A function can be represented by a formula, table, graph, or verbal rule. Its **domain** is the set of allowed inputs and its **range** is the set of resulting outputs.
+
+For a linear model,
+
+$$
+f(x)=mx+b,
+$$
+
+$m$ is the constant rate of change and $b$ is the initial value.
+
+| Representation | Best for |
+|---|---|
+| Formula | exact calculation |
+| Table | sampled data |
+| Graph | shape and trend |
+| Description | interpretation |
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: functions-and-models-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: numeric
+prompt: |
+  A linear function has $f(2)=7$ and slope $3$. What is $f(5)$?
+answer: 16
+tolerance: 0.001
+hint: "Use change = slope times input change."
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: functions-and-models-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "A function assigns exactly one output to each allowed input. Models connect symbolic rules to measurable quantities."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Functions and mathematical models** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

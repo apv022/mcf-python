@@ -1,0 +1,99 @@
+---
+id: differentiation-rules
+title: "Differentiation rules"
+description: "Rules make derivatives efficient without repeating the limit definition."
+---
+
+:::mcf-activity
+type: notes
+id: differentiation-rules-notes
+title: "Learn"
+:::
+
+# Differentiation rules
+
+Core rules include:
+
+$$
+\frac{d}{dx}x^n=nx^{n-1},\qquad (fg)'=f'g+fg',
+$$
+
+and
+
+$$
+\left(\frac{f}{g}\right)'=\frac{f'g-fg'}{g^2}.
+$$
+
+Derivatives are linear: $(af+bg)'=af'+bg'$.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: differentiation-rules-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: multiple_choice
+prompt: |
+  What is the derivative of $x^5$?
+options:
+  - id: a
+    text: "5x^4"
+  - id: b
+    text: "x^4"
+  - id: c
+    text: "5x^5"
+
+answer: a
+hint: "Review the key rule in the notes."
+explanation: "The selected answer follows directly from the definition or rule above."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: differentiation-rules-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Rules make derivatives efficient without repeating the limit definition."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Differentiation rules** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

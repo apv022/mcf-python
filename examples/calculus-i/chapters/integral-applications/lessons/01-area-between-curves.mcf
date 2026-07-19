@@ -1,0 +1,86 @@
+---
+id: area-between-curves
+title: "Area between curves"
+description: "Area between curves is found by integrating top minus bottom or right minus left."
+---
+
+:::mcf-activity
+type: notes
+id: area-between-curves-notes
+title: "Learn"
+:::
+
+# Area between curves
+
+If $f(x)\ge g(x)$ on $[a,b]$, then
+
+$$
+A=\int_a^b\left(f(x)-g(x)\right)dx.
+$$
+
+Intersection points usually determine the bounds. If the curves exchange order, split the integral.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: area-between-curves-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: numeric
+prompt: |
+  Find the area between $y=x$ and $y=0$ from $x=0$ to $x=2$.
+answer: 2
+tolerance: 0.001
+hint: "Integrate $x$ from 0 to 2."
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: area-between-curves-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Area between curves is found by integrating top minus bottom or right minus left."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Area between curves** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

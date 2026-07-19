@@ -1,0 +1,99 @@
+---
+id: integration-techniques
+title: "Substitution and basic integration techniques"
+description: "Substitution reverses the chain rule and simplifies composite integrands."
+---
+
+:::mcf-activity
+type: notes
+id: integration-techniques-notes
+title: "Learn"
+:::
+
+# Substitution and basic integration techniques
+
+If $u=g(x)$ and $du=g'(x)dx$, then
+
+$$
+\int f(g(x))g'(x)\,dx=\int f(u)\,du.
+$$
+
+Example:
+
+$$
+\int 2x\cos(x^2)\,dx=\sin(x^2)+C.
+$$
+
+Always return an indefinite integral to the original variable.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: integration-techniques-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: multiple_choice
+prompt: |
+  A natural substitution for $\int 2x\cos(x^2)dx$ is:
+options:
+  - id: a
+    text: "u=2x"
+  - id: b
+    text: "u=x^2"
+  - id: c
+    text: "u=cos x"
+
+answer: b
+hint: "Review the key rule in the notes."
+explanation: "The selected answer follows directly from the definition or rule above."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: integration-techniques-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Substitution reverses the chain rule and simplifies composite integrands."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Substitution and basic integration techniques** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

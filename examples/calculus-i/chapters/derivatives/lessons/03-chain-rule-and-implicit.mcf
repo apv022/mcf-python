@@ -1,0 +1,92 @@
+---
+id: chain-rule-and-implicit
+title: "Chain rule and implicit differentiation"
+description: "The chain rule differentiates nested functions; implicit differentiation handles relations not solved for one variable."
+---
+
+:::mcf-activity
+type: notes
+id: chain-rule-and-implicit-notes
+title: "Learn"
+:::
+
+# Chain rule and implicit differentiation
+
+For a composite,
+
+$$
+\frac{d}{dx}f(g(x))=f'(g(x))g'(x).
+$$
+
+If $x^2+y^2=25$, differentiate both sides with respect to $x$:
+
+$$
+2x+2y\frac{dy}{dx}=0,
+$$
+
+so $dy/dx=-x/y$ where $y\ne0$.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: chain-rule-and-implicit-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: numeric
+prompt: |
+  Find $d/dx[(3x+1)^2]$ at $x=1$.
+answer: 24
+tolerance: 0.001
+hint: "Differentiate the outer square and multiply by the inner derivative."
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: chain-rule-and-implicit-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "The chain rule differentiates nested functions; implicit differentiation handles relations not solved for one variable."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Chain rule and implicit differentiation** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

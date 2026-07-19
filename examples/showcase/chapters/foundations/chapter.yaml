@@ -1,0 +1,6 @@
+id: foundations
+title: 'Foundations'
+description: 'Rich content and interaction'
+lessons:
+  - lessons/01-rich-content.mcf
+  - lessons/02-questions.mcf

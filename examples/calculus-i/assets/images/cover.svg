@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+<defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#17324d"/><stop offset="1" stop-color="#2b7a78"/></linearGradient></defs>
+<rect width="1200" height="630" fill="url(#g)"/><path d="M80 480 C250 120 440 550 620 260 S930 100 1120 330" fill="none" stroke="#fff" stroke-width="18" opacity=".9"/>
+<text x="80" y="150" fill="#fff" font-family="system-ui,sans-serif" font-size="86" font-weight="700">Calculus I</text>
+<text x="84" y="225" fill="#dff7f4" font-family="system-ui,sans-serif" font-size="34">Limits · Derivatives · Integrals</text>
+</svg>

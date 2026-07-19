@@ -1,0 +1,93 @@
+---
+id: optimization
+title: "Optimization"
+description: "Optimization converts a verbal constraint into a one-variable objective and analyzes critical points."
+---
+
+:::mcf-activity
+type: notes
+id: optimization-notes
+title: "Learn"
+:::
+
+# Optimization
+
+For a rectangle with perimeter $P$, let width be $x$. Then length is $P/2-x$, and area is
+
+$$
+A(x)=x\left(\frac P2-x\right).
+$$
+
+Critical points satisfy $A'(x)=0$. Endpoints and domain restrictions must also be checked.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: optimization-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: multiple_choice
+prompt: |
+  For a differentiable interior maximum, which condition is a candidate test?
+options:
+  - id: a
+    text: "f'(x)=0"
+  - id: b
+    text: "f(x)=0"
+  - id: c
+    text: "f''(x)=0 always"
+
+answer: a
+hint: "Review the key rule in the notes."
+explanation: "The selected answer follows directly from the definition or rule above."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: optimization-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Optimization converts a verbal constraint into a one-variable objective and analyzes critical points."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Optimization** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

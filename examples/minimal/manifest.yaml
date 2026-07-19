@@ -1,0 +1,9 @@
+mcf: '1.0'
+id: minimal-course
+title: 'A Minimal MCF Course'
+language: en
+description: 'The smallest useful MCF 1.0 package.'
+authors: ['MCF Project']
+version: '1.0.0'
+chapters:
+  - source: chapters/start

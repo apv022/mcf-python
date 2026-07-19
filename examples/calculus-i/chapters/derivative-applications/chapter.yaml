@@ -1,0 +1,7 @@
+id: derivative-applications
+title: 'Applications of Derivatives'
+description: 'Optimization, curve analysis, and related rates'
+lessons:
+  - lessons/01-related-rates.mcf
+  - lessons/02-optimization.mcf
+  - lessons/03-curve-sketching.mcf

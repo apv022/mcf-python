@@ -1,0 +1,7 @@
+id: limits
+title: 'Limits and Continuity'
+description: 'Local behavior, limit laws, and continuity'
+lessons:
+  - lessons/01-limit-intuition.mcf
+  - lessons/02-limit-laws.mcf
+  - lessons/03-continuity.mcf

@@ -1,0 +1,91 @@
+---
+id: riemann-sums
+title: "Riemann sums and definite integrals"
+description: "A definite integral is the limit of sums of thin rectangular contributions."
+---
+
+:::mcf-activity
+type: notes
+id: riemann-sums-notes
+title: "Learn"
+:::
+
+# Riemann sums and definite integrals
+
+A Riemann sum is
+
+$$
+\sum_{i=1}^{n}f(x_i^*)\Delta x.
+$$
+
+![Riemann sum rectangles](../../../assets/images/riemann-sum.svg)
+
+As the maximum subinterval width approaches zero, the sum approaches
+
+$$
+\int_a^b f(x)\,dx.
+$$
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: riemann-sums-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: short_answer
+prompt: |
+  What symbol denotes the width of a subinterval in a Riemann sum?
+answer: "delta x"
+hint: "Write the name of the symbol in words."
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: riemann-sums-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "A definite integral is the limit of sums of thin rectangular contributions."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Riemann sums and definite integrals** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

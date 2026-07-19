@@ -1,0 +1,95 @@
+---
+id: questions
+title: "Every Question Type"
+description: "Practice feedback, essay completion, and assessment scoring."
+authors: ["MCF Project"]
+license: CC0-1.0
+---
+
+:::mcf-activity
+type: practice
+id: choice-practice
+title: "Choice practice"
+randomize: false
+question_pool_size: 3
+:::
+
+```mcf-question
+id: one
+type: multiple_choice
+points: 1
+required: true
+prompt: "Which format is this course written in?"
+options:
+  - id: mcf
+    text: "**MCF**"
+  - id: pdf
+    text: "PDF"
+answer: mcf
+hint: "Look at the course title."
+explanation: "This source package uses MCF 1.0."
+```
+
+```mcf-question
+id: many
+type: multiple_select
+prompt: "Select the MCF 1.0 activity types."
+options:
+  - id: notes
+    text: "Notes"
+  - id: practice
+    text: "Practice"
+  - id: lab
+    text: "Lab"
+answer: [notes, practice]
+```
+
+```mcf-question
+id: boolean
+type: true_false
+prompt: "MCF requires a backend."
+answer: false
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: response-assessment
+title: "Written and numeric responses"
+passing_score: 0.7
+randomize: true
+:::
+
+```mcf-question
+id: number
+type: numeric
+points: 2
+prompt: 'What is $6 \times 7$?'
+answer: 42
+tolerance: 0
+explanation: '$6 \times 7 = 42$.'
+```
+
+```mcf-question
+id: words
+type: short_answer
+points: 1
+prompt: "Type the three-letter format name."
+answer: "MCF"
+```
+
+```mcf-question
+id: reflection
+type: essay
+prompt: |
+  In a paragraph, describe how you might use a local-first course.
+required: true
+points: 4
+minimum_words: 12
+minimum_sentences: 2
+keywords: [local, progress, course]
+minimum_keywords: 2
+```
+
+:::mcf-end

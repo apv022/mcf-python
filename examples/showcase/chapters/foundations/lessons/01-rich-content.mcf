@@ -1,0 +1,40 @@
+---
+id: rich-content
+title: "Rich Content"
+description: "Markdown, math, images, audio, video, tables, and code."
+authors: ["MCF Project"]
+license: CC0-1.0
+---
+
+:::mcf-activity
+type: notes
+id: rich-notes
+title: "A portable lesson"
+:::
+
+## Markdown and math
+
+MCF supports **friendly prose**, lists, links, and inline math such as $E = mc^2$.
+
+$$
+v = \frac{\Delta x}{\Delta t}
+$$
+
+| Medium | Portable |
+| --- | --- |
+| Local image | Yes |
+| Remote video | Network required |
+
+```js
+const learning = 'local-first';
+```
+
+![A simple learning path](../../../assets/images/path.svg)
+
+@[audio](../../../assets/audio/t-rex-roar.mp3 "CC0 audio sample")
+
+@[video](../../../assets/video/flower.mp4 "CC0 video sample")
+
+@[video](https://www.youtube.com/watch?v=Dw_tGRblTXk "Remote video example")
+
+:::mcf-end

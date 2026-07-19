@@ -1,0 +1,111 @@
+---
+id: course-synthesis
+title: "Calculus synthesis and final assessment"
+description: "Calculus studies local change and global accumulation, joined by the Fundamental Theorem."
+---
+
+:::mcf-activity
+type: notes
+id: course-synthesis-notes
+title: "Learn"
+:::
+
+# Calculus synthesis and final assessment
+
+The course can be summarized as a cycle:
+
+1. model quantities with functions;
+2. use limits to define local behavior;
+3. differentiate to measure instantaneous change;
+4. integrate to measure accumulated change;
+5. interpret results in context.
+
+A strong solution states variables, units, domain restrictions, method, and interpretation.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: course-synthesis-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: essay
+prompt: |
+  Explain how limits, derivatives, and integrals are connected in calculus.
+minimum_words: 80
+minimum_sentences: 4
+keywords:
+  - limit
+  - derivative
+  - integral
+  - accumulation
+minimum_keywords: 3
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: course-synthesis-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: final-1
+type: multiple_select
+prompt: "Select the ideas that belong to the central structure of Calculus I."
+options:
+  - id: limits
+    text: "Limits describe approach and local behavior."
+  - id: derivatives
+    text: "Derivatives measure instantaneous change."
+  - id: integrals
+    text: "Integrals measure accumulation."
+  - id: guessing
+    text: "Answers do not need assumptions or interpretation."
+answer: [limits, derivatives, integrals]
+points: 3
+required: true
+explanation: "Limits, derivatives, and integrals form the core of the course."
+```
+
+```mcf-question
+id: final-2
+type: numeric
+prompt: |
+  Evaluate $\int_0^1 2x\,dx$.
+answer: 1
+tolerance: 0.001
+points: 2
+required: true
+explanation: "An antiderivative is $x^2$, so the value is 1."
+```
+
+```mcf-question
+id: final-3
+type: essay
+prompt: |
+  Describe one real situation where a derivative is useful and one where an integral is useful. Explain the units and interpretation of each result.
+minimum_words: 100
+minimum_sentences: 5
+keywords:
+  - derivative
+  - integral
+  - rate
+  - accumulation
+  - units
+minimum_keywords: 4
+points: 3
+required: true
+```
+
+:::mcf-end

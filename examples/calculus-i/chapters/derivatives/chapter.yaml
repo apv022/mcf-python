@@ -1,0 +1,7 @@
+id: derivatives
+title: 'Derivatives'
+description: 'Rates of change and differentiation rules'
+lessons:
+  - lessons/01-derivative-definition.mcf
+  - lessons/02-differentiation-rules.mcf
+  - lessons/03-chain-rule-and-implicit.mcf

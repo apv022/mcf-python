@@ -1,0 +1,100 @@
+---
+id: transformations-and-composition
+title: "Transformations and composition"
+description: "Transformations move or reshape graphs; composition feeds one function into another."
+---
+
+:::mcf-activity
+type: notes
+id: transformations-and-composition-notes
+title: "Learn"
+:::
+
+# Transformations and composition
+
+If $y=f(x)$, then:
+
+- $f(x)+k$ shifts vertically by $k$;
+- $f(x-h)$ shifts right by $h$;
+- $af(x)$ scales vertically by $a$;
+- $f(bx)$ scales horizontally.
+
+![Two vertical translations of a parabola](../../../assets/images/function-transformations.svg)
+
+Composition is
+
+$$
+(f\circ g)(x)=f(g(x)).
+$$
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: transformations-and-composition-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: multiple_choice
+prompt: |
+  Which expression shifts $f(x)$ three units to the right?
+options:
+  - id: a
+    text: "f(x)+3"
+  - id: b
+    text: "f(x-3)"
+  - id: c
+    text: "f(3x)"
+
+answer: b
+hint: "Review the key rule in the notes."
+explanation: "The selected answer follows directly from the definition or rule above."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: transformations-and-composition-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "Transformations move or reshape graphs; composition feeds one function into another."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Transformations and composition** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end

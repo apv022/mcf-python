@@ -1,0 +1,94 @@
+---
+id: derivative-definition
+title: "Derivative from first principles"
+description: "The derivative is the limiting slope of secant lines and the instantaneous rate of change."
+---
+
+:::mcf-activity
+type: notes
+id: derivative-definition-notes
+title: "Learn"
+:::
+
+# Derivative from first principles
+
+The derivative is
+
+$$
+f'(x)=\lim_{h\to0}\frac{f(x+h)-f(x)}{h}.
+$$
+
+![Secant lines approaching a tangent](../../../assets/images/secant-tangent.svg)
+
+For $f(x)=x^2$,
+
+$$
+\frac{(x+h)^2-x^2}{h}=2x+h\to 2x.
+$$
+
+Thus $f'(x)=2x$.
+
+
+> **Study habit:** translate every formula into a sentence about quantities and units.
+
+:::mcf-end
+
+:::mcf-activity
+type: practice
+id: derivative-definition-practice
+title: "Practice"
+:::
+
+Work the problem before checking your response.
+
+```mcf-question
+id: p1
+type: numeric
+prompt: |
+  Using $f(x)=x^2$, what is $f'(3)$?
+answer: 6
+tolerance: 0.001
+hint: "The derivative is $2x$."
+explanation: "Check the definition, calculate carefully, and include the relevant units when appropriate."
+```
+
+:::mcf-end
+
+:::mcf-activity
+type: assessment
+id: derivative-definition-assessment
+title: "Lesson assessment"
+passing_score: 0.7
+:::
+
+```mcf-question
+id: a1
+type: multiple_choice
+prompt: "Which statement best captures the central idea of this lesson?"
+options:
+  - id: concept
+    text: "The derivative is the limiting slope of secant lines and the instantaneous rate of change."
+  - id: distractor
+    text: "Calculus rules apply without checking assumptions or domains."
+answer: concept
+points: 2
+required: true
+explanation: "The first statement reflects the lesson's main mathematical idea."
+```
+
+```mcf-question
+id: a2
+type: essay
+prompt: |
+  Explain the main idea of **Derivative from first principles** in your own words and give one mathematical example.
+minimum_words: 45
+minimum_sentences: 3
+keywords:
+  - calculus
+  - function
+minimum_keywords: 1
+points: 1
+required: true
+```
+
+:::mcf-end
