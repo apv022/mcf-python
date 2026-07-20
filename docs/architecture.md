@@ -8,6 +8,8 @@ MCF packages are untrusted. YAML uses `safe_load`; authored HTML passes through 
 
 Reader CSS and bundled JavaScript are vendored unchanged from `mcf-npm` 1.0.0 because they define implementation-specific behavior. Run `python scripts/check_reader_sync.py ../mcf-npm` after reference-reader changes, review them, copy deliberate updates, and update the documented compatibility version. WOFF2 fonts and `katex.min.css` come from KaTeX 0.16.22 under its MIT license.
 
+For local development, clone this repository, create a virtual environment, install it with `python -m pip install -e .`, and add development tools with `python -m pip install -e ".[dev]"`. The package is not published to PyPI yet.
+
 To add an officially standardized activity or question, update the model and parser validation first, add invalid and valid fixtures, then update rendering and the reader data/runtime. Add media syntax in reference extraction, validation, copying, and rendering together. Future MCF versions should use version-keyed parsers rather than unofficial MCF 1.0 fields. Reader-only features belong in the reader and must not be described as source-format conformance.
 
 Compilation is deterministic except for filesystem staging names. JSON uses stable insertion order and readable indentation; HTML is emitted structurally and does not invoke a runtime formatter. Course replacement uses a same-filesystem staging directory and rollback backup. Root catalog files use atomic file replacement. A failure during catalog update can leave the successfully replaced course present but its old catalog record; recompilation repairs this practical cross-file atomicity limitation.

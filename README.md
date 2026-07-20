@@ -4,25 +4,46 @@
 
 MCF is the standardized source format. Generated HTML, navigation, grading presentation, browser storage, progress export/import, and the completion badge are reader implementation features and do not extend the MCF specification.
 
-## Install and use
+## Install and use from a clone
 
-Python 3.11 or newer is required to compile. Learners only need a browser.
+Python 3.11 or newer is required to compile. The package is not published to PyPI yet; install it from a cloned repository. Learners only need a browser.
 
 ```bash
-python -m pip install mcf-compiler
-mcf validate ./my-course
-mcf compile ./my-course --output ./courses
+git clone https://github.com/apv022/mcf-python.git
+cd mcf-python
+
+python -m venv .venv
+source .venv/bin/activate
+# Windows PowerShell:
+# .venv\Scripts\Activate.ps1
+
+python -m pip install --upgrade pip
+python -m pip install -e .
 ```
 
-For repository development:
+Use the installed command:
 
 ```bash
-python -m pip install -e '.[dev]'
+mcf --help
+mcf validate /path/to/course
+mcf compile /path/to/course --output ./courses
+```
+
+The module form is an equivalent fallback:
+
+```bash
+python -m mcf_compiler --help
 python -m mcf_compiler validate /path/to/course
 python -m mcf_compiler compile /path/to/course --output ./courses
 ```
 
-Validation failures are accumulated and written to stderr; both validation and compilation return a nonzero status. Open `courses/index.html` directly. Current Chromium-based browsers and Safari provide the best `file://` experience; Firefox may require `python -m http.server --directory courses`. Local assets and the UI work offline. Remote media still requires a connection, and YouTube embeds require HTTP, with a direct-file fallback link supplied by the reader.
+For development dependencies, run:
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+Validation failures are accumulated and written to stderr; both validation and compilation return a nonzero status. Open the generated `courses/index.html` directly. No Node.js is required. Current Chromium-based browsers and Safari provide the best `file://` experience; Firefox may require `python -m http.server --directory courses`. Local assets and the UI work offline. Remote media still requires a connection, and YouTube embeds require HTTP, with a direct-file fallback link supplied by the reader.
 
 ## Course source
 
@@ -130,19 +151,21 @@ Markdown is generated with `markdown-it-py` CommonMark plus tables and sanitized
 
 Raw authored HTML is sanitized. Scripts, event handlers, unsafe protocols, and unsafe embedded content are removed. Authored JavaScript is never evaluated. YouTube is the only provider-style remote video embed; other HTTP(S) media use native media elements.
 
-## Development and release
+## Smoke test
 
 ```bash
-ruff format --check .
+python -m pip install -e ".[dev]"
 ruff check .
 mypy src
 pytest
-python scripts/parity_check.py
-python -m build
-python -m twine check dist/*
-python scripts/check_reader_sync.py /path/to/mcf-npm
 ```
 
-Before release, compile the minimal, calculus, and showcase examples from the reference repositories, inspect `tar -tf dist/*.tar.gz` and `unzip -l dist/*.whl`, then publish with `python -m twine upload dist/*`. Build artifacts, caches, tests, examples, and local output libraries are excluded from distributions; runtime reader assets, KaTeX CSS, and WOFF2 fonts are included intentionally.
+Formatting and compatibility checks:
+
+```bash
+ruff format --check .
+python scripts/parity_check.py
+python scripts/check_reader_sync.py /path/to/mcf-npm
+```
 
 The compiler and reader are MIT licensed. Course content retains the license declared by its package.
