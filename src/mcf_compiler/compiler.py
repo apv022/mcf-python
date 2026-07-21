@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
+import re
 import shutil
 import tempfile
 from dataclasses import asdict, dataclass
@@ -20,6 +22,12 @@ from .render import encoded_lesson_id, escape, lesson_body, page
 class CompileResult:
     course: Course
     directory: Path
+
+
+@dataclass(frozen=True, slots=True)
+class SingleFileResult:
+    course: Course
+    file: Path
 
 
 def _without_none(value: Any) -> Any:
@@ -393,3 +401,102 @@ window.MCF_COURSE = {_json(data)};
     finally:
         if staging.exists():
             shutil.rmtree(staging, ignore_errors=True)
+
+
+def _data_url(source: Path) -> str:
+    import base64
+
+    mime = mimetypes.guess_type(source.name)[0] or "application/octet-stream"
+    return f"data:{mime};base64,{base64.b64encode(source.read_bytes()).decode('ascii')}"
+
+
+def _standalone_assets(course: Course) -> dict[str, str]:
+    assets: dict[str, str] = {}
+    root = course.root.resolve()
+    for source in root.rglob("*"):
+        if source.is_file() and re.search(
+            r"\.(?:svg|png|jpe?g|webp|gif|mp3|wav|ogg|mp4|webm|woff2?|ttf)$",
+            source.name,
+            re.IGNORECASE,
+        ):
+            assets[source.relative_to(root).as_posix()] = _data_url(source)
+    if course.cover and not course.cover.lower().startswith(("http:", "https:")):
+        source = root / course.cover
+        if source.is_file():
+            assets[course.cover.replace(os.sep, "/")] = _data_url(source)
+    return assets
+
+
+def _standalone_sidebar(course: Course) -> str:
+    chapters = []
+    for chapter in course.chapters:
+        links = "\n".join(
+            f'<a class="lesson-link" data-lesson-id="{escape(lesson.id)}" '
+            f'href="#lesson-{encoded_lesson_id(lesson.id)}">{escape(lesson.title)}</a>'
+            for lesson in chapter.lessons
+        )
+        chapters.append(
+            f'<div><div class="chapter-label">{escape(chapter.title)}</div>\n{links}</div>'
+        )
+    return (
+        f'<aside class="sidebar"><h1>{escape(course.title)}</h1>'
+        '<div class="progress"><i data-progress-bar style="width:0"></i></div>'
+        "<b data-progress>0%</b><nav>\n" + "\n".join(chapters) + "\n</nav></aside>"
+    )
+
+
+def compile_single_file(input_path: str | Path, output: str | Path) -> SingleFileResult:
+    course = parse_course(input_path)
+    root = course.root.resolve()
+    target = Path(output).expanduser().resolve()
+    if target == root or root in target.parents:
+        raise ValueError("Standalone output must not be inside the source course package.")
+    lessons = unique_lessons(course)
+    sections = []
+    data = course_data(course)
+    section_html = "\n".join(sections)
+    for index, lesson in enumerate(lessons):
+        description = f"<p>{escape(lesson.description)}</p>" if lesson.description else ""
+        sections.append(
+            f'<section class="standalone-lesson" id="lesson-{encoded_lesson_id(lesson.id)}" '
+            f'data-lesson="{escape(lesson.id)}">'
+            f'<header class="lesson-header"><span class="eyebrow">Lesson {index + 1} of '
+            f"{len(lessons)}</span><h1>{escape(lesson.title)}</h1>{description}</header>"
+            f"{lesson_body(lesson, course)}</section>"
+        )
+    body = (
+        "<style>.standalone-lesson{display:none}.standalone-lesson.active{display:block}</style>"
+        f'<div class="course-shell standalone"><div>{_standalone_sidebar(course)}</div>'
+        '<main class="main"><div class="lesson">'
+        f'<section class="standalone-overview"><h1>{escape(course.title)}</h1>'
+        f"<p>{escape(course.description or '')}</p>"
+        f"<p>{escape(', '.join(course.authors or []))}</p></section>{section_html}"
+        f'<div class="badge hidden"><div class="badge-mark">✓</div><h2>Course complete</h2>'
+        f"<p>{escape(course.title)}</p><p>Completed <span data-completion-date></span></p>"
+        "</div></div></main></div>"
+        f"<script>window.MCF_COURSE = {_json(data)};</script>"
+    )
+    html = page(
+        course.title, course.language, body, "styles.css", "player.js", "katex/katex.min.css"
+    )
+    html = html.replace("<body>", '<body data-standalone="true">', 1)
+    for relative, url in _standalone_assets(course).items():
+        html = html.replace(f"../{relative}", url).replace(relative, url)
+    styles = reader_styles()
+    katex = (
+        files("mcf_compiler")
+        .joinpath("assets", "katex", "katex.min.css")
+        .read_text(encoding="utf-8")
+    )
+    fonts = files("mcf_compiler").joinpath("assets", "katex", "fonts")
+    for resource in fonts.iterdir():
+        katex = katex.replace(f"fonts/{resource.name}", _data_url(Path(str(resource))))
+    player = (
+        files("mcf_compiler").joinpath("assets", "reader", "player.js").read_text(encoding="utf-8")
+    )
+    html = re.sub(r'<link rel="stylesheet" href="[^"]+">\s*', "", html)
+    html = re.sub(r'<script src="[^"]+"></script>\s*', "", html)
+    html = html.replace("</head>", f"<style>{styles}</style><style>{katex}</style></head>")
+    html = html.replace("</body>", f"<script>{player}</script></body>")
+    _atomic_write(target, html)
+    return SingleFileResult(course=course, file=target)

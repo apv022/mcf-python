@@ -194,8 +194,37 @@
   if (location.protocol === "file:") document.documentElement.classList.add("file-protocol");
   var state = loadState(course);
   var lessonId = document.body.dataset.lesson;
-  var lesson = course.lessons.find((item) => item.id === lessonId);
-  var key = (activity, question) => `${lessonId}:${activity.id}${question ? `:${question.id}` : ""}`;
+  var standalone = document.body.dataset.standalone === "true";
+  var activeLessonId = lessonId || course.lessons[0]?.id;
+  var lesson = course.lessons.find((item) => item.id === activeLessonId);
+  var activeSection = () => standalone ? document.querySelector(`.standalone-lesson[data-lesson="${CSS.escape(activeLessonId || "")}"]`) : document;
+  if (standalone) {
+    const requested = decodeURIComponent(location.hash.replace(/^#lesson-/, ""));
+    if (course.lessons.some((item) => item.id === requested)) activeLessonId = requested;
+    lesson = course.lessons.find((item) => item.id === activeLessonId);
+    document.querySelectorAll(".standalone-lesson").forEach((section) => {
+      section.classList.toggle("active", section.dataset.lesson === activeLessonId);
+    });
+    document.querySelectorAll(".lesson-link").forEach(
+      (link) => link.addEventListener("click", () => {
+        activeLessonId = link.dataset.lessonId || activeLessonId;
+        lesson = course.lessons.find((item) => item.id === activeLessonId);
+        document.querySelectorAll(".standalone-lesson").forEach(
+          (section) => section.classList.toggle("active", section.dataset.lesson === activeLessonId)
+        );
+      })
+    );
+    window.addEventListener("hashchange", () => {
+      const next = decodeURIComponent(location.hash.replace(/^#lesson-/, ""));
+      if (!course.lessons.some((item) => item.id === next)) return;
+      activeLessonId = next;
+      lesson = course.lessons.find((item) => item.id === activeLessonId);
+      document.querySelectorAll(".standalone-lesson").forEach(
+        (section) => section.classList.toggle("active", section.dataset.lesson === activeLessonId)
+      );
+    });
+  }
+  var key = (activity, question) => `${activeLessonId}:${activity.id}${question ? `:${question.id}` : ""}`;
   function persist() {
     saveState(course, state);
     updateCompletion();
@@ -311,21 +340,21 @@
     persist();
   }
   function updateCompletion() {
-    if (lesson && lessonId) {
+    if (lesson && activeLessonId) {
       for (const activity of lesson.activities ?? []) {
         const selected = selectedQuestions(activity);
         const complete = activity.type === "notes" ? !!state.activities[key(activity)] : activity.type === "assessment" ? !!state.assessments[key(activity)]?.submitted : selected.filter((question) => question.required).every((question) => state.questions[key(activity, question)]?.complete);
         state.activities[key(activity)] = complete;
         document.querySelector(`[data-activity="${CSS.escape(activity.id)}"]`)?.classList.toggle("complete", complete);
       }
-      state.lessons[lessonId] = (lesson.activities ?? []).every(
+      state.lessons[activeLessonId] = (lesson.activities ?? []).every(
         (activity) => state.activities[key(activity)]
       );
     }
     refreshProgress(course, state);
     saveState(course, state);
   }
-  for (const activityElement of document.querySelectorAll(".activity")) {
+  for (const activityElement of (activeSection() ?? document).querySelectorAll(".activity")) {
     const activity = lesson?.activities?.find((item) => item.id === activityElement.dataset.activity);
     if (!activity) continue;
     const order = chooseQuestions(activity), questions = activityElement.querySelector(".questions");

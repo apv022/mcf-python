@@ -27,6 +27,7 @@ Use the installed command:
 mcf --help
 mcf validate /path/to/course
 mcf compile /path/to/course --output ./courses
+mcf compile /path/to/course --single-file ./exports/course.html
 ```
 
 The module form is an equivalent fallback:
@@ -35,7 +36,12 @@ The module form is an equivalent fallback:
 python -m mcf_compiler --help
 python -m mcf_compiler validate /path/to/course
 python -m mcf_compiler compile /path/to/course --output ./courses
+python -m mcf_compiler compile /path/to/course --single-file ./exports/course.html
 ```
+
+`--output` is the normal multi-file library mode. `--single-file` creates one standalone HTML document containing the reader UI, course data, lessons, styles, scripts, KaTeX resources, and local media. The destination parent is created when needed, and recompilation atomically replaces the destination. The options are mutually exclusive, validation runs before output is written, and the standalone destination must be outside the source package.
+
+Standalone files open directly as local files without Python, Node.js, a server, sibling files, or an internet connection for local course content. Explicitly remote URLs and YouTube still require the network; YouTube retains the direct-file fallback behavior.
 
 For development dependencies, run:
 
@@ -142,6 +148,14 @@ courses/
 ```
 
 Course and catalog data are emitted as readable JSON and embedded in ordinary scripts for direct-file operation. Compilation uses a staging directory, replaces only the matching course ID, removes stale files from that course, and preserves other library entries.
+
+The programmatic standalone API is also available:
+
+```python
+from mcf_compiler import compile_single_file
+
+compile_single_file("./my-course", "./exports/my-course.html")
+```
 
 ## Compatibility and limitations
 
