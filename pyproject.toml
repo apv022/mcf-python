@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcf-compiler"
-version = "1.0.0"
-description = "Python compiler for Modular Curriculum Format (MCF) 1.0 courses"
+version = "1.1.0"
+description = "Python validator and compiler for Modular Curriculum Format 1.0 and 1.1"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
@@ -26,12 +26,13 @@ dependencies = [
   "bleach>=6.2,<7",
   "latex2mathml>=3.77,<4",
   "markdown-it-py>=3.0,<5",
+  "jsonschema>=4.23,<5",
   "PyYAML>=6.0.2,<7",
 ]
 
 [project.urls]
 Homepage = "https://github.com/apv022/mcf-python"
-Specification = "https://github.com/apv022/MCF-Specification"
+Specification = "https://github.com/apv022/mcf-spec"
 
 [project.scripts]
 mcf = "mcf_compiler.cli:main"
@@ -62,7 +63,7 @@ dev = [
 packages = ["src/mcf_compiler"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/docs", "/README.md", "/LICENSE", "/pyproject.toml"]
+include = ["/src", "/docs", "/README.md", "/CHANGELOG.md", "/LICENSE", "/pyproject.toml"]
 exclude = ["/.gitignore"]
 
 [tool.ruff]

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MCF 1.0 question object",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "prompt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._-]*$"
+    },
+    "type": {
+      "enum": [
+        "multiple_choice",
+        "multiple_select",
+        "true_false",
+        "numeric",
+        "short_answer",
+        "essay"
+      ]
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hint": {
+      "type": "string"
+    },
+    "explanation": {
+      "type": "string"
+    },
+    "points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "required": {
+      "type": "boolean"
+    },
+    "options": {
+      "type": "array"
+    },
+    "answer": {},
+    "tolerance": {
+      "type": "number",
+      "minimum": 0
+    },
+    "minimum_words": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "minimum_sentences": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "keywords": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "minimum_keywords": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

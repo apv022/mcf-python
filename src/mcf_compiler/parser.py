@@ -8,6 +8,7 @@ from pathlib import Path
 from .lesson import identifier, parse_lesson_source
 from .model import Chapter, Course, Lesson, ValidationError, ValidationIssue
 from .paths import is_really_contained, portable_path, validate_reference
+from .schema import validate_schema
 from .yamlio import add_issue, as_object, load_yaml_file, optional_text, string_list, text
 
 REFERENCE_RE = re.compile(r"!?\[[^\]]*\]\(([^\s)]+)|@\[(?:audio|video)\]\(([^\s)]+)")
@@ -23,7 +24,7 @@ def _reference_fields(lesson: Lesson) -> list[str]:
     return result
 
 
-def parse_course(input_path: str | Path) -> Course:
+def parse_course10(input_path: str | Path) -> Course:
     root = Path(input_path).expanduser().resolve()
     issues: list[ValidationIssue] = []
     if not root.is_dir():
@@ -31,6 +32,7 @@ def parse_course(input_path: str | Path) -> Course:
             [ValidationIssue(file=str(input_path), message="Course directory does not exist.")]
         )
     manifest = load_yaml_file(root / "manifest.yaml", "manifest.yaml", issues)
+    issues.extend(validate_schema(manifest, "1.0", "manifest.schema.json", "manifest.yaml"))
     if manifest.get("mcf") != "1.0":
         add_issue(
             issues,
@@ -72,6 +74,7 @@ def parse_course(input_path: str | Path) -> Course:
 
             display = f"{source}/chapter.yaml"
             chapter_data = load_yaml_file(chapter_dir / "chapter.yaml", display, issues)
+            issues.extend(validate_schema(chapter_data, "1.0", "chapter.schema.json", display))
             if not (chapter_dir / "lessons").is_dir():
                 add_issue(issues, display, "Required lessons/ directory does not exist.")
             lessons: list[Lesson] = []
@@ -162,3 +165,11 @@ def validate_course(input_path: str | Path) -> list[ValidationIssue]:
     except ValidationError as error:
         return error.issues
     return []
+
+
+def parse_course(input_path: str | Path) -> Course:
+    """Parse a course using the exact version declared by its manifest."""
+
+    from .package import parse_course as dispatched_parse_course
+
+    return dispatched_parse_course(input_path)

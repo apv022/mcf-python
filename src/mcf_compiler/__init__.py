@@ -1,15 +1,31 @@
-"""Compile MCF 1.0 course packages into static offline readers."""
+"""Validate and compile MCF 1.0 and 1.1 packages."""
 
 from .compiler import CompileResult, SingleFileResult, compile_course, compile_single_file
 from .model import ValidationError
-from .parser import parse_course
+from .package import (
+    ParseOptions,
+    ValidationResult,
+    capabilities,
+    parse_course,
+    parse_package,
+    parse_package_set,
+    validate_capability_declaration,
+    validate_package,
+)
 
 __all__ = [
     "CompileResult",
+    "ParseOptions",
     "SingleFileResult",
     "ValidationError",
+    "ValidationResult",
+    "capabilities",
     "compile_course",
     "compile_single_file",
     "parse_course",
+    "parse_package",
+    "parse_package_set",
+    "validate_capability_declaration",
+    "validate_package",
 ]
-__version__ = "1.0.0"
+__version__ = "1.1.0"

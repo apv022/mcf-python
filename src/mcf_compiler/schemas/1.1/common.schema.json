@@ -1,0 +1,490 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/apv022/mcf-spec/master/schemas/1.1/common.schema.json",
+  "title": "MCF 1.1 common definitions",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._-]*$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "safePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:/)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\\\\)(?!.*//).+$"
+    },
+    "archivePath": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/safePath"
+        },
+        {
+          "pattern": "^[^:]+\\.mcf\\.zip$"
+        }
+      ]
+    },
+    "language": {
+      "type": "string",
+      "format": "bcp47"
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^P(?=\\d|T\\d)(?:\\d+(?:\\.\\d+)?Y)?(?:\\d+(?:\\.\\d+)?M)?(?:\\d+(?:\\.\\d+)?W)?(?:\\d+(?:\\.\\d+)?D)?(?:T(?=\\d)(?:\\d+(?:\\.\\d+)?H)?(?:\\d+(?:\\.\\d+)?M)?(?:\\d+(?:\\.\\d+)?S)?)?$"
+    },
+    "level": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "label"
+          ],
+          "properties": {
+            "label": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "identifier": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "uri": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      ]
+    },
+    "framework": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "identifier": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "learningOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "statement": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "framework": {
+          "$ref": "#/$defs/framework"
+        }
+      }
+    },
+    "prerequisite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement"
+      ],
+      "properties": {
+        "statement": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "identifier": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "package": {
+          "$ref": "#/$defs/id"
+        }
+      }
+    },
+    "extension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "data"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "data": true
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9-]+(?:\\.[a-z0-9-]+){2,}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/extension"
+      }
+    },
+    "completionCondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirement"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "activity"
+          ]
+        },
+        {
+          "required": [
+            "question"
+          ]
+        }
+      ],
+      "properties": {
+        "activity": {
+          "$ref": "#/$defs/id"
+        },
+        "question": {
+          "$ref": "#/$defs/id"
+        },
+        "requirement": {
+          "enum": [
+            "viewed",
+            "attempted",
+            "answered",
+            "submitted",
+            "passed",
+            "manually_marked_complete"
+          ]
+        },
+        "minimum_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "minimum_score"
+            ]
+          },
+          "then": {
+            "properties": {
+              "requirement": {
+                "const": "passed"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "all"
+          ]
+        },
+        {
+          "required": [
+            "any"
+          ]
+        }
+      ],
+      "properties": {
+        "all": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/completionCondition"
+              },
+              {
+                "$ref": "#/$defs/completion"
+              }
+            ]
+          }
+        },
+        "any": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/completionCondition"
+              },
+              {
+                "$ref": "#/$defs/completion"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "package"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "translation_of",
+            "has_translation",
+            "is_version_of",
+            "has_version",
+            "derived_from",
+            "requires",
+            "supplements"
+          ]
+        },
+        "package": {
+          "$ref": "#/$defs/id"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "language": {
+          "$ref": "#/$defs/language"
+        },
+        "href": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/archivePath"
+            },
+            {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https://"
+            }
+          ]
+        }
+      }
+    },
+    "localizedResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/safePath"
+        },
+        "language": {
+          "$ref": "#/$defs/language"
+        },
+        "kind": {
+          "enum": [
+            "captions",
+            "subtitles",
+            "descriptions"
+          ]
+        }
+      }
+    },
+    "assetAlternate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "purpose"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/safePath"
+        },
+        "purpose": {
+          "enum": [
+            "accessible_alternative",
+            "low_bandwidth",
+            "print",
+            "transcoded"
+          ]
+        },
+        "language": {
+          "$ref": "#/$defs/language"
+        },
+        "media_type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+$"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "source": {
+          "$ref": "#/$defs/safePath"
+        },
+        "media_type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+$"
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "type": "string"
+        },
+        "creator": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "license": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "attribution_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "integrity": {
+          "type": "string",
+          "pattern": "^sha(?:256|384|512)-[A-Za-z0-9+/]+={0,2}$"
+        },
+        "language": {
+          "$ref": "#/$defs/language"
+        },
+        "captions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/localizedResource"
+              },
+              {
+                "required": [
+                  "language",
+                  "kind"
+                ]
+              }
+            ]
+          }
+        },
+        "transcript": {
+          "$ref": "#/$defs/localizedResource"
+        },
+        "audio_description": {
+          "$ref": "#/$defs/localizedResource"
+        },
+        "alternates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/assetAlternate"
+          }
+        }
+      }
+    },
+    "rubricLevel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "points"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "points": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "rubricCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "levels"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "levels": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/rubricLevel"
+          }
+        }
+      }
+    },
+    "rubric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "criteria"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "type": "string"
+        },
+        "criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rubricCriterion"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,10 +1,10 @@
-# Authoring MCF 1.0
+# Authoring MCF 1.0 and 1.1
 
-Use the published MCF 1.0 specification as the normative reference. Required manifest fields are `mcf: '1.0'`, `id`, `title`, `language`, and a non-empty ordered `chapters` list. Optional fields are `description`, `authors`, `license`, `version`, and `cover`. Each chapter requires `id`, `title`, and a non-empty ordered `lessons` list. Lessons require `id`, `title`, and at least one closed activity; optional lesson fields are `description`, `authors`, and `license`.
+Use the published specification as the normative reference. MCF 1.0 course manifests require `mcf: '1.0'`, `id`, `title`, `language`, and ordered `chapters`. MCF 1.1 additionally requires `kind` and supports course, module, lesson, question-bank, and asset-collection packages.
 
 Identifiers match `[a-z][a-z0-9._-]*`. Chapter and distinct lesson IDs are unique in a course; activity and question IDs are unique in a lesson; option IDs are unique in a question.
 
-Activities require `type` and `id`; `title` is optional. `passing_score` is an assessment-only number from 0 to 1. `randomize` and positive `question_pool_size` are practice/assessment-only, and a pool cannot exceed its activity question count.
+Activities require `type` and `id`; `title` is optional. MCF 1.1 adds assignments, explicit evaluation modes, submission rules, rubrics, and reusable question references. `passing_score` is assessment-only. A positive question pool cannot exceed its available questions and references.
 
 All questions require string `id`, `type`, and `prompt`. `points` is a finite non-negative number (default 1), `required` is boolean (default true), and `hint`/`explanation` are optional rich content. Multiple choice requires one answer option ID; multiple select requires a non-empty distinct list; true/false requires YAML boolean; numeric requires a finite number and optional non-negative absolute `tolerance`; short answer requires a string; essay must not declare `answer`.
 

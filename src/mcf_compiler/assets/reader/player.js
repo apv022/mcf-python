@@ -46,11 +46,11 @@
 
   // src/reader/storage.ts
   function storageKey(course2) {
-    return `mcf:${course2.id}:${course2.version || "unversioned"}`;
+    return `mcf:state-v2:${course2.id}:${course2.version || "unversioned"}`;
   }
   function emptyState(course2) {
     return {
-      schema: 1,
+      schema: 2,
       courseId: course2.id,
       version: course2.version ?? null,
       questions: {},
@@ -58,6 +58,9 @@
       assessments: {},
       lessons: {},
       questionOrders: {},
+      matchingOrders: {},
+      orderingOrders: {},
+      manualCompletions: {},
       completedAt: null
     };
   }
@@ -65,25 +68,34 @@
     return !!value && typeof value === "object" && !Array.isArray(value);
   }
   function validState(value, course2) {
-    if (!record(value) || value.schema !== 1 || value.courseId !== course2.id || value.version !== (course2.version ?? null))
+    if (!record(value) || value.schema !== 2 || value.courseId !== course2.id || value.version !== (course2.version ?? null))
       return false;
-    if (!["questions", "activities", "assessments", "lessons", "questionOrders"].every(
-      (key2) => record(value[key2])
-    ))
+    if (![
+      "questions",
+      "activities",
+      "assessments",
+      "lessons",
+      "questionOrders",
+      "matchingOrders",
+      "orderingOrders",
+      "manualCompletions"
+    ].every((key2) => record(value[key2])))
       return false;
     if (value.completedAt !== null && typeof value.completedAt !== "string") return false;
     const booleans = (item) => record(item) && Object.values(item).every((entry) => typeof entry === "boolean");
-    if (!booleans(value.activities) || !booleans(value.lessons)) return false;
-    if (!Object.values(value.questionOrders).every(
-      (entry) => Array.isArray(entry) && entry.every((id) => typeof id === "string")
-    ))
+    if (!booleans(value.activities) || !booleans(value.lessons) || !booleans(value.manualCompletions))
       return false;
+    for (const map of [value.questionOrders, value.matchingOrders, value.orderingOrders])
+      if (!Object.values(map).every(
+        (entry) => Array.isArray(entry) && entry.every((id) => typeof id === "string")
+      ))
+        return false;
     if (!Object.values(value.questions).every(
-      (entry) => record(entry) && typeof entry.complete === "boolean" && (typeof entry.correct === "boolean" || entry.correct === null)
+      (entry) => record(entry) && typeof entry.complete === "boolean" && (typeof entry.correct === "boolean" || entry.correct === null) && typeof entry.attempted === "boolean" && typeof entry.checked === "boolean" && (typeof entry.earned === "number" || entry.earned === null)
     ))
       return false;
     return Object.values(value.assessments).every(
-      (entry) => record(entry) && typeof entry.submitted === "boolean" && typeof entry.score === "number" && Number.isFinite(entry.score) && typeof entry.possible === "number" && Number.isFinite(entry.possible) && (typeof entry.passed === "boolean" || entry.passed === null)
+      (entry) => record(entry) && typeof entry.submitted === "boolean" && typeof entry.score === "number" && Number.isFinite(entry.score) && typeof entry.possible === "number" && Number.isFinite(entry.possible) && (typeof entry.passed === "boolean" || entry.passed === null) && typeof entry.pendingManual === "boolean"
     );
   }
   function loadState(course2) {
@@ -126,26 +138,120 @@
   }
 
   // src/reader/questions.ts
-  function hasResponse(value) {
-    return Array.isArray(value) ? value.length > 0 : String(value ?? "").trim().length > 0;
+  function numericResponse(value) {
+    if (typeof value === "number") return Number.isFinite(value) ? value : void 0;
+    if (typeof value !== "string" || !value.trim()) return;
+    if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(value.trim())) return;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : void 0;
+  }
+  function responseComplete(question, value) {
+    switch (question.type) {
+      case "multiple_choice":
+      case "true_false":
+        return typeof value === "string" && value.length > 0;
+      case "multiple_select":
+        return Array.isArray(value) && value.length > 0 && value.every((id) => typeof id === "string") && new Set(value).size === value.length;
+      case "numeric":
+        return numericResponse(value) !== void 0;
+      case "short_answer":
+      case "essay":
+      case "open_response":
+        return typeof value === "string" && value.trim().length > 0;
+      case "matching": {
+        if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+        const actual = value;
+        const ids = (question.premises ?? []).map((item) => item.id);
+        const selected = ids.map((id) => actual[id]);
+        return ids.length > 0 && selected.every((id) => typeof id === "string" && id.length > 0) && (question.reuse_responses || new Set(selected).size === selected.length);
+      }
+      case "ordering": {
+        if (!Array.isArray(value)) return false;
+        const expected = (question.items ?? []).map((item) => item.id);
+        return value.length === expected.length && new Set(value).size === value.length && value.every((id) => typeof id === "string" && expected.includes(id));
+      }
+      default:
+        return value !== null && value !== void 0 && String(value).trim().length > 0;
+    }
   }
   function evaluateQuestion(question, response) {
+    if (!responseComplete(question, response)) return false;
     switch (question.type) {
       case "multiple_select":
         return JSON.stringify([...response].sort()) === JSON.stringify([...question.answer].sort());
       case "true_false":
         return response === "true" === question.answer;
-      case "numeric":
-        return hasResponse(response) && Number.isFinite(Number(response)) && Math.abs(Number(response) - Number(question.answer)) <= (question.tolerance ?? 0);
+      case "numeric": {
+        const tolerance = typeof question.tolerance === "number" ? { absolute: question.tolerance } : question.tolerance ?? { absolute: 0 };
+        const parsed = numericResponse(response);
+        const difference = Math.abs(parsed - Number(question.answer));
+        return tolerance.absolute !== void 0 && difference <= tolerance.absolute || tolerance.relative !== void 0 && difference <= tolerance.relative * Math.abs(Number(question.answer));
+      }
       case "short_answer":
-        return String(response).trim().toLocaleLowerCase() === String(question.answer).trim().toLocaleLowerCase();
+        return (question.answers ?? [String(question.answer)]).some(
+          (answer) => normalizeAnswer(String(response), question) === normalizeAnswer(answer, question)
+        );
       case "essay":
+      case "open_response":
         return null;
+      case "matching": {
+        const expected = question.answer;
+        const actual = response;
+        return Object.keys(expected).every((key2) => actual?.[key2] === expected[key2]);
+      }
+      case "ordering":
+        return JSON.stringify(response) === JSON.stringify(question.answer);
       default:
         return response === question.answer;
     }
   }
+  function normalizeAnswer(value, question) {
+    const settings = question.normalization ?? {};
+    if ((settings.unicode ?? "NFC") !== "none") value = value.normalize(settings.unicode ?? "NFC");
+    if (settings.trim ?? true) value = value.trim();
+    if (settings.collapse_whitespace) value = value.replace(/\s+/gu, " ");
+    if (!(settings.case_sensitive ?? false)) value = value.toLocaleLowerCase();
+    return value;
+  }
+  function earnedPoints(question, response) {
+    if (!responseComplete(question, response)) return 0;
+    if (question.type === "multiple_choice" && question.options?.some((option) => option.weight !== void 0))
+      return (question.options.find((option) => option.id === response)?.weight ?? 0) * question.points;
+    if (question.scoring === "partial" && question.type === "multiple_select") {
+      const selected = new Set(response);
+      const correct = new Set(question.answer);
+      const incorrectTotal = (question.options?.length ?? 0) - correct.size;
+      const correctSelected = [...selected].filter((id) => correct.has(id)).length;
+      const incorrectSelected = [...selected].filter((id) => !correct.has(id)).length;
+      return Math.max(
+        0,
+        correctSelected / correct.size - (incorrectTotal ? incorrectSelected / incorrectTotal : 0)
+      ) * question.points;
+    }
+    if (question.scoring === "partial" && question.type === "matching") {
+      const expected = question.answer;
+      const actual = response;
+      return Object.keys(expected).filter((key2) => actual?.[key2] === expected[key2]).length / Object.keys(expected).length * question.points;
+    }
+    if (question.scoring === "partial" && question.type === "ordering") {
+      const expected = question.answer;
+      const actual = response;
+      return expected.filter((value, index) => actual?.[index] === value).length / expected.length * question.points;
+    }
+    return evaluateQuestion(question, response) ? question.points : 0;
+  }
   function responseFrom(element) {
+    if (element.dataset.type === "matching")
+      return Object.fromEntries(
+        [...element.querySelectorAll("select[data-premise]")].map((select) => [
+          select.dataset.premise,
+          select.value
+        ])
+      );
+    if (element.dataset.type === "ordering")
+      return [...element.querySelectorAll("[data-ordering-item]")].map(
+        (item) => item.dataset.orderingItem
+      );
     const inputs = [
       ...element.querySelectorAll("input,textarea")
     ];
@@ -155,11 +261,11 @@
     return checked?.value ?? inputs[0]?.value ?? "";
   }
   function completion(question, response, requireCorrect) {
-    if (question.type === "essay") {
+    if (question.type === "essay" || question.type === "open_response") {
       const result = evaluateEssay(String(response ?? ""), question);
       return { complete: result.complete, correct: null, feedback: result.feedback };
     }
-    if (!hasResponse(response))
+    if (!responseComplete(question, response))
       return { complete: false, correct: null, feedback: ["Add a response first."] };
     const correct = evaluateQuestion(question, response);
     return { complete: requireCorrect ? correct === true : true, correct, feedback: [] };
@@ -197,7 +303,6 @@
   var standalone = document.body.dataset.standalone === "true";
   var activeLessonId = lessonId || course.lessons[0]?.id;
   var lesson = course.lessons.find((item) => item.id === activeLessonId);
-  var activeSection = () => standalone ? document.querySelector(`.standalone-lesson[data-lesson="${CSS.escape(activeLessonId || "")}"]`) : document;
   if (standalone) {
     const requested = decodeURIComponent(location.hash.replace(/^#lesson-/, ""));
     if (course.lessons.some((item) => item.id === requested)) activeLessonId = requested;
@@ -238,16 +343,35 @@
       "textarea,input.text-response"
     );
     if (text) text.value = String(value);
+    if (element.dataset.type === "matching" && value && typeof value === "object")
+      element.querySelectorAll("select[data-premise]").forEach((select) => {
+        select.value = String(value[select.dataset.premise] ?? "");
+      });
+    if (element.dataset.type === "ordering" && Array.isArray(value)) {
+      const list = element.querySelector(".ordering-list");
+      for (const id of value) {
+        const item = element.querySelector(
+          `[data-ordering-item="${CSS.escape(String(id))}"]`
+        );
+        if (item) list?.append(item);
+      }
+    }
+  }
+  function shuffled(ids, forbidden) {
+    const result = [...ids];
+    for (let index = result.length - 1; index > 0; index--) {
+      const other = Math.floor(Math.random() * (index + 1));
+      [result[index], result[other]] = [result[other], result[index]];
+    }
+    if (result.length > 1 && forbidden && result.every((value, index) => value === forbidden[index]))
+      result.push(result.shift());
+    return result;
   }
   function chooseQuestions(activity) {
     const activityKey = key(activity);
     if (state.questionOrders[activityKey]) return state.questionOrders[activityKey];
     const ids = activity.questions.map((question) => question.id);
-    if (activity.randomize)
-      for (let index = ids.length - 1; index > 0; index--) {
-        const other = Math.floor(Math.random() * (index + 1));
-        [ids[index], ids[other]] = [ids[other], ids[index]];
-      }
+    if (activity.randomize) ids.splice(0, ids.length, ...shuffled(ids));
     state.questionOrders[activityKey] = ids.slice(0, activity.question_pool_size ?? ids.length);
     saveState(course, state);
     return state.questionOrders[activityKey];
@@ -261,20 +385,88 @@
     output.textContent = messages.join(" ");
     output.className = `feedback ${result === true ? "correct" : result === false ? "incorrect" : ""}`;
   }
+  function showResponseFeedback(element, response) {
+    const selected = new Set(Array.isArray(response) ? response : [String(response ?? "")]);
+    element.querySelectorAll("[data-option-feedback]").forEach((node) => {
+      node.classList.toggle("hidden", !selected.has(node.dataset.optionFeedback));
+    });
+  }
+  function configureMatching(question, element, stateKey) {
+    let order = state.matchingOrders[stateKey];
+    const responseIds = (question.responses ?? []).map((item) => item.id);
+    if (!order || order.length !== responseIds.length || order.some((id) => !responseIds.includes(id))) {
+      const answer = question.answer;
+      const answerOrder = answer ? (question.premises ?? []).map((premise) => answer[premise.id]) : void 0;
+      order = shuffled(responseIds, answerOrder);
+      state.matchingOrders[stateKey] = order;
+    }
+    const labels = new Map(
+      [...element.querySelectorAll('option[value]:not([value=""])')].map(
+        (option) => [option.value, option.textContent ?? option.value]
+      )
+    );
+    element.querySelectorAll("select[data-premise]").forEach((select) => {
+      const current = select.value;
+      select.replaceChildren(new Option("Choose\u2026", ""));
+      for (const id of order) select.add(new Option(labels.get(id) ?? id, id));
+      select.value = current;
+    });
+    const enforceReuse = () => {
+      if (question.reuse_responses) return;
+      const controls = [...element.querySelectorAll("select[data-premise]")];
+      const selected = new Set(controls.map((select) => select.value).filter(Boolean));
+      for (const select of controls)
+        for (const option of [...select.options])
+          option.disabled = !!option.value && option.value !== select.value && selected.has(option.value);
+    };
+    element.querySelectorAll("select[data-premise]").forEach((select) => select.addEventListener("change", enforceReuse));
+    enforceReuse();
+  }
+  function configureOrdering(question, element, stateKey) {
+    const ids = (question.items ?? []).map((item) => item.id);
+    let order = state.orderingOrders[stateKey];
+    const answer = Array.isArray(question.answer) ? question.answer : void 0;
+    if (!order || order.length !== ids.length || order.some((id) => !ids.includes(id))) {
+      order = shuffled(ids, answer);
+      state.orderingOrders[stateKey] = order;
+    }
+    restore(element, order);
+    element.querySelectorAll("[data-move]").forEach(
+      (button) => button.addEventListener("click", () => {
+        const item = button.closest("[data-ordering-item]");
+        const sibling = button.dataset.move === "up" ? item?.previousElementSibling : item?.nextElementSibling?.nextElementSibling;
+        if (item && sibling) item.parentElement?.insertBefore(item, sibling);
+        const response = responseFrom(element);
+        state.orderingOrders[stateKey] = response;
+        const previous = state.questions[stateKey];
+        state.questions[stateKey] = questionState(response, previous, true);
+        persist();
+        item?.querySelector(`[data-move="${button.dataset.move}"]`)?.focus();
+      })
+    );
+  }
+  function questionState(response, previous, attempted = false) {
+    return {
+      response,
+      complete: previous?.complete ?? false,
+      correct: previous?.correct ?? null,
+      attempted: previous?.attempted || attempted,
+      checked: previous?.checked ?? false,
+      earned: previous?.earned ?? null
+    };
+  }
   function wireQuestion(activity, element) {
     const question = activity.questions.find((item) => item.id === element.dataset.id);
     const stateKey = key(activity, question);
     restore(element, state.questions[stateKey]?.response);
+    if (question.type === "matching") configureMatching(question, element, stateKey);
+    if (question.type === "ordering") configureOrdering(question, element, stateKey);
     element.querySelector(".hint-button")?.addEventListener("click", () => element.querySelector(".hint")?.classList.toggle("hidden"));
-    element.querySelectorAll("input,textarea").forEach(
+    element.querySelectorAll("input,textarea,select").forEach(
       (control) => control.addEventListener("input", () => {
         const response = responseFrom(element), previous = state.questions[stateKey];
-        state.questions[stateKey] = {
-          response,
-          complete: previous?.complete ?? false,
-          correct: previous?.correct ?? null
-        };
-        if (question.type === "essay") {
+        state.questions[stateKey] = questionState(response, previous, true);
+        if (question.type === "essay" || question.type === "open_response") {
           const result = evaluateEssay(String(response), question);
           showFeedback(
             element,
@@ -288,23 +480,43 @@
     );
     if (activity.type !== "assessment")
       element.querySelector(".check-button")?.addEventListener("click", () => {
-        const response = responseFrom(element), result = completion(question, response, activity.type === "practice");
-        state.questions[stateKey] = { response, complete: result.complete, correct: result.correct };
-        if (question.type === "essay")
+        const response = responseFrom(element);
+        const nonObjective = question.evaluation === "manual" || question.evaluation === "ungraded";
+        const result = nonObjective ? {
+          complete: responseComplete(question, response),
+          correct: null,
+          feedback: responseComplete(question, response) ? [
+            question.evaluation === "manual" ? "Response submitted. Manual review is pending." : "Ungraded response saved."
+          ] : ["Add a response first."]
+        } : completion(
+          question,
+          response,
+          activity.type === "practice" && question.evaluation !== "completion"
+        );
+        state.questions[stateKey] = {
+          response,
+          complete: result.complete,
+          correct: result.correct,
+          attempted: true,
+          checked: true,
+          earned: result.correct === null ? null : earnedPoints(question, response)
+        };
+        if (question.type === "essay" || question.type === "open_response")
           showFeedback(
             element,
             result.feedback.length ? result.feedback : ["Response saved. Completion requirements met."],
             null
           );
-        else if (!hasResponse(response)) showFeedback(element, result.feedback, null);
+        else if (!responseComplete(question, response)) showFeedback(element, result.feedback, null);
+        else if (nonObjective) showFeedback(element, result.feedback, null);
         else
           showFeedback(
             element,
             [result.correct ? "Correct \u2014 nicely done." : "Not quite. Try again."],
             result.correct
           );
-        if (result.correct === true)
-          element.querySelector(".explanation")?.classList.remove("hidden");
+        showResponseFeedback(element, response);
+        element.querySelector(".explanation")?.classList.remove("hidden");
         persist();
       });
   }
@@ -312,7 +524,7 @@
     const selected = selectedQuestions(activity), unmet = selected.filter((question) => {
       if (!question.required) return false;
       const response = state.questions[key(activity, question)]?.response;
-      return question.type === "essay" ? !evaluateEssay(String(response ?? ""), question).complete : !hasResponse(response);
+      return question.type === "essay" || question.type === "open_response" ? !evaluateEssay(String(response ?? ""), question).complete : !responseComplete(question, response);
     });
     if (unmet.length) {
       container.querySelector(".assessment-result").textContent = `Complete all required questions before submitting: ${unmet.map((question) => question.id).join(", ")}.`;
@@ -321,64 +533,212 @@
     let earned = 0, possible = 0;
     for (const question of selected) {
       const itemKey = key(activity, question), response = state.questions[itemKey]?.response;
-      if (question.type === "essay") {
+      if (question.evaluation === "manual" || question.evaluation === "ungraded") {
+        state.questions[itemKey] = {
+          response,
+          complete: responseComplete(question, response),
+          correct: null,
+          attempted: true,
+          checked: false,
+          earned: null
+        };
+      } else if (question.type === "essay" || question.type === "open_response") {
         const essay = evaluateEssay(String(response ?? ""), question);
-        state.questions[itemKey] = { response, complete: essay.complete, correct: null };
+        state.questions[itemKey] = {
+          response,
+          complete: essay.complete,
+          correct: null,
+          attempted: true,
+          checked: false,
+          earned: null
+        };
       } else {
         const correct = evaluateQuestion(question, response);
-        if (question.required || hasResponse(response)) {
+        if (question.points > 0 && (question.required || responseComplete(question, response))) {
           possible += question.points;
-          if (correct) earned += question.points;
+          earned += earnedPoints(question, response);
         }
-        state.questions[itemKey] = { response, complete: hasResponse(response), correct };
+        state.questions[itemKey] = {
+          response,
+          complete: responseComplete(question, response),
+          correct,
+          attempted: true,
+          checked: true,
+          earned: earnedPoints(question, response)
+        };
       }
       container.querySelector(`[data-id="${CSS.escape(question.id)}"] .explanation`)?.classList.remove("hidden");
+      showResponseFeedback(
+        container.querySelector(`[data-id="${CSS.escape(question.id)}"]`),
+        response
+      );
     }
-    const score = possible ? earned / possible : 1, passed = activity.passing_score === void 0 ? null : score >= activity.passing_score;
-    state.assessments[key(activity)] = { submitted: true, score, possible, passed };
-    container.querySelector(".assessment-result").textContent = `Submitted score: ${earned}/${possible} (${Math.round(score * 100)}%). ${passed === null ? "Submission complete." : passed ? "Passed." : "Not passed."} Essays are completion-checked but excluded from automatic scoring.`;
+    const pendingManual = selected.some(
+      (question) => (question.evaluation === "manual" || question.type === "essay") && question.required
+    );
+    const score = possible ? earned / possible : 0, passed = pendingManual || activity.passing_score === void 0 ? null : score >= activity.passing_score;
+    state.assessments[key(activity)] = {
+      submitted: true,
+      score,
+      possible,
+      passed,
+      pendingManual
+    };
+    container.querySelector(".assessment-result").textContent = `${pendingManual ? "Provisional automatic score" : "Submitted score"}: ${earned}/${possible} (${Math.round(score * 100)}%). ${pendingManual ? "Manual review pending." : passed === null ? "Submission complete." : passed ? "Passed." : "Not passed."}`;
     persist();
+  }
+  function findQuestion(id) {
+    for (const activity of lesson?.activities ?? []) {
+      const question = activity.questions.find((item) => item.id === id);
+      if (question) return { activity, question };
+    }
+  }
+  function conditionMet(condition) {
+    const activity = condition.activity ? lesson?.activities?.find((item) => item.id === condition.activity) : condition.question ? findQuestion(condition.question)?.activity : void 0;
+    const question = condition.question ? findQuestion(condition.question)?.question : void 0;
+    if (!activity) return false;
+    const activityKey = key(activity);
+    const questionKey = question ? key(activity, question) : void 0;
+    const questionStateValue = questionKey ? state.questions[questionKey] : void 0;
+    const assessment = state.assessments[activityKey];
+    switch (condition.requirement) {
+      case "viewed":
+        return !!document.querySelector(`[data-activity="${CSS.escape(activity.id)}"]`);
+      case "attempted":
+        return question ? !!questionStateValue?.attempted : activity.questions.some((item) => state.questions[key(activity, item)]?.attempted);
+      case "answered":
+        return question ? responseComplete(question, questionStateValue?.response) : activity.questions.filter((item) => item.required).every(
+          (item) => responseComplete(item, state.questions[key(activity, item)]?.response)
+        );
+      case "submitted":
+        return activity.type === "assignment" ? !!state.questions[`${activityKey}:submission`]?.complete : !!assessment?.submitted;
+      case "passed":
+        return assessment?.passed === true && (condition.minimum_score === void 0 || assessment.score >= condition.minimum_score);
+      case "manually_marked_complete":
+        return !!state.manualCompletions[questionKey ?? activityKey];
+    }
+  }
+  function expressionMet(expression, depth = 1) {
+    if (depth > 8) return false;
+    const entries = expression.all ?? expression.any;
+    if (!entries?.length) return false;
+    const values = entries.map(
+      (entry) => "requirement" in entry ? conditionMet(entry) : expressionMet(entry, depth + 1)
+    );
+    return expression.any ? values.some(Boolean) : values.every(Boolean);
+  }
+  function fallbackActivityComplete(activity) {
+    const activityKey = key(activity);
+    const required = selectedQuestions(activity).filter((question) => question.required);
+    if (activity.type === "notes") return !!state.manualCompletions[activityKey];
+    if (activity.type === "assessment") {
+      const assessment = state.assessments[activityKey];
+      return activity.passing_score === void 0 ? !!assessment?.submitted : assessment?.submitted === true && assessment.passed === true;
+    }
+    if (activity.type === "assignment")
+      return !!state.questions[`${activityKey}:submission`]?.complete;
+    if (activity.evaluation === "manual")
+      return required.every((question) => state.questions[key(activity, question)]?.attempted);
+    if (activity.evaluation === "completion")
+      return required.every((question) => state.questions[key(activity, question)]?.complete);
+    if (activity.evaluation === "ungraded")
+      return !!state.manualCompletions[activityKey] || required.every(
+        (question) => responseComplete(question, state.questions[key(activity, question)]?.response)
+      );
+    return required.every((question) => {
+      const item = state.questions[key(activity, question)];
+      return item?.checked && responseComplete(question, item.response);
+    });
+  }
+  function wireAssignment(activity, element) {
+    const stateKey = `${key(activity)}:submission`;
+    const existing = state.questions[stateKey]?.response;
+    const text = element.querySelector("[data-assignment-text]");
+    const url = element.querySelector("[data-assignment-url]");
+    if (text) text.value = existing?.text ?? "";
+    if (url) url.value = existing?.url ?? "";
+    element.querySelector(".assignment-submit")?.addEventListener("click", () => {
+      const files = [
+        ...element.querySelector("[data-assignment-files]")?.files ?? []
+      ].map((file) => ({ name: file.name, size: file.size, type: file.type }));
+      const response = { text: text?.value.trim(), url: url?.value.trim(), files };
+      const modes = activity.submission?.modes ?? [];
+      const validUrl = !response.url || (() => {
+        try {
+          return ["http:", "https:"].includes(new URL(response.url).protocol);
+        } catch {
+          return false;
+        }
+      })();
+      const minimum = activity.submission?.minimum_files ?? 0;
+      const maximum = activity.submission?.maximum_files ?? Infinity;
+      const complete = validUrl && files.length >= minimum && files.length <= maximum && (modes.includes("text") && !!response.text || modes.includes("url") && !!response.url || modes.includes("file") && files.length > 0);
+      state.questions[stateKey] = {
+        response,
+        complete,
+        correct: null,
+        attempted: true,
+        checked: false,
+        earned: null
+      };
+      element.querySelector(".assignment-result").textContent = complete ? "Submitted locally. Manual or host-platform review remains pending." : "Add a valid declared response and satisfy the file requirements before submitting.";
+      persist();
+    });
   }
   function updateCompletion() {
     if (lesson && activeLessonId) {
       for (const activity of lesson.activities ?? []) {
-        const selected = selectedQuestions(activity);
-        const complete = activity.type === "notes" ? !!state.activities[key(activity)] : activity.type === "assessment" ? !!state.assessments[key(activity)]?.submitted : selected.filter((question) => question.required).every((question) => state.questions[key(activity, question)]?.complete);
+        const complete = fallbackActivityComplete(activity);
         state.activities[key(activity)] = complete;
         document.querySelector(`[data-activity="${CSS.escape(activity.id)}"]`)?.classList.toggle("complete", complete);
       }
-      state.lessons[activeLessonId] = (lesson.activities ?? []).every(
-        (activity) => state.activities[key(activity)]
-      );
+      state.lessons[activeLessonId] = lesson.completion ? expressionMet(lesson.completion) : (lesson.activities ?? []).every((activity) => state.activities[key(activity)]);
     }
     refreshProgress(course, state);
     saveState(course, state);
   }
-  for (const activityElement of (activeSection() ?? document).querySelectorAll(".activity")) {
-    const activity = lesson?.activities?.find((item) => item.id === activityElement.dataset.activity);
-    if (!activity) continue;
-    const order = chooseQuestions(activity), questions = activityElement.querySelector(".questions");
-    for (const id of order) {
-      const element = activityElement.querySelector(
-        `.question[data-id="${CSS.escape(id)}"]`
+  function initializeActivities(scope, lessonId2) {
+    const previousId = activeLessonId, previousLesson = lesson;
+    activeLessonId = lessonId2;
+    lesson = course.lessons.find((item) => item.id === lessonId2);
+    if (!lesson) return;
+    for (const activityElement of scope.querySelectorAll(".activity")) {
+      const activity = lesson?.activities?.find(
+        (item) => item.id === activityElement.dataset.activity
       );
-      if (element) {
-        questions?.append(element);
-        wireQuestion(activity, element);
+      if (!activity) continue;
+      const order = chooseQuestions(activity), questions = activityElement.querySelector(".questions");
+      for (const id of order) {
+        const element = activityElement.querySelector(
+          `.question[data-id="${CSS.escape(id)}"]`
+        );
+        if (element) {
+          questions?.append(element);
+          wireQuestion(activity, element);
+        }
       }
+      activityElement.querySelectorAll(".question").forEach((element) => {
+        if (!order.includes(element.dataset.id)) element.remove();
+      });
+      activityElement.querySelector(".notes-complete")?.addEventListener("click", () => {
+        state.manualCompletions[key(activity)] = true;
+        persist();
+      });
+      if (activity.type === "assignment") wireAssignment(activity, activityElement);
+      activityElement.querySelector(".assessment-submit")?.addEventListener("click", () => submitAssessment(activity, activityElement));
+      const submitted = state.assessments[key(activity)];
+      if (submitted)
+        activityElement.querySelector(".assessment-result").textContent = `Previously submitted: ${Math.round(submitted.score * 100)}%. ${submitted.passed === null ? "" : submitted.passed ? "Passed." : "Not passed."}`;
     }
-    activityElement.querySelectorAll(".question").forEach((element) => {
-      if (!order.includes(element.dataset.id)) element.remove();
-    });
-    activityElement.querySelector(".notes-complete")?.addEventListener("click", () => {
-      state.activities[key(activity)] = true;
-      persist();
-    });
-    activityElement.querySelector(".assessment-submit")?.addEventListener("click", () => submitAssessment(activity, activityElement));
-    const submitted = state.assessments[key(activity)];
-    if (submitted)
-      activityElement.querySelector(".assessment-result").textContent = `Previously submitted: ${Math.round(submitted.score * 100)}%. ${submitted.passed === null ? "" : submitted.passed ? "Passed." : "Not passed."}`;
+    activeLessonId = previousId;
+    lesson = previousLesson;
   }
+  if (standalone)
+    for (const section of document.querySelectorAll(".standalone-lesson")) {
+      const id = section.dataset.lesson;
+      if (id) initializeActivities(section, id);
+    }
+  else if (activeLessonId) initializeActivities(document, activeLessonId);
   wireTransfer(course, () => state);
   updateCompletion();
 })();

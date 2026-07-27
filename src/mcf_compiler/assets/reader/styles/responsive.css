@@ -10,10 +10,9 @@
   }
   .sidebar nav {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
-    overflow-x: auto;
     padding-bottom: 0.25rem;
-    scrollbar-width: thin;
   }
   .sidebar nav > div {
     display: contents;
@@ -22,8 +21,7 @@
     display: none;
   }
   .lesson-link {
-    flex: 0 0 auto;
-    white-space: nowrap;
+    flex: 1 1 10rem;
     background: #183c4d;
   }
   .lesson {
@@ -40,6 +38,10 @@
   .question {
     margin: 1rem 0;
     padding: 1rem;
+  }
+  .matching-item,
+  .ordering-item {
+    grid-template-columns: minmax(0, 1fr);
   }
   .lesson-nav {
     align-items: stretch;

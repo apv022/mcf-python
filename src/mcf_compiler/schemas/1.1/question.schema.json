@@ -1,0 +1,628 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/apv022/mcf-spec/master/schemas/1.1/question.schema.json",
+  "title": "MCF 1.1 question",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/multipleChoice"
+    },
+    {
+      "$ref": "#/$defs/multipleSelect"
+    },
+    {
+      "$ref": "#/$defs/trueFalse"
+    },
+    {
+      "$ref": "#/$defs/numeric"
+    },
+    {
+      "$ref": "#/$defs/shortAnswer"
+    },
+    {
+      "$ref": "#/$defs/essay"
+    },
+    {
+      "$ref": "#/$defs/openResponse"
+    },
+    {
+      "$ref": "#/$defs/matching"
+    },
+    {
+      "$ref": "#/$defs/ordering"
+    }
+  ],
+  "$defs": {
+    "common": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "prompt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "enum": [
+            "multiple_choice",
+            "multiple_select",
+            "true_false",
+            "numeric",
+            "short_answer",
+            "essay",
+            "open_response",
+            "matching",
+            "ordering"
+          ]
+        },
+        "prompt": {
+          "$ref": "common.schema.json#/$defs/nonEmptyString"
+        },
+        "hint": {
+          "type": "string"
+        },
+        "explanation": {
+          "type": "string"
+        },
+        "points": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1
+        },
+        "required": {
+          "type": "boolean",
+          "default": true
+        },
+        "evaluation": {
+          "enum": [
+            "automatic",
+            "manual",
+            "completion",
+            "ungraded"
+          ]
+        },
+        "learning_outcomes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          }
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "text": {
+          "$ref": "common.schema.json#/$defs/nonEmptyString"
+        },
+        "feedback": {
+          "type": "string"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "choiceFields": {
+      "type": "object",
+      "required": [
+        "options",
+        "answer"
+      ],
+      "properties": {
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/option"
+          }
+        }
+      }
+    },
+    "multipleChoice": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/common"
+        },
+        {
+          "$ref": "#/$defs/choiceFields"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "multiple_choice"
+            },
+            "answer": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "evaluation": {
+              "const": "automatic"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "multipleSelect": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/common"
+        },
+        {
+          "$ref": "#/$defs/choiceFields"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "multiple_select"
+            },
+            "answer": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "common.schema.json#/$defs/id"
+              }
+            },
+            "options": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/option"
+                  },
+                  {
+                    "not": {
+                      "required": [
+                        "weight"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "scoring": {
+              "enum": [
+                "exact",
+                "partial"
+              ],
+              "default": "exact"
+            },
+            "evaluation": {
+              "const": "automatic"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "trueFalse": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/common"
+        },
+        {
+          "type": "object",
+          "required": [
+            "answer"
+          ],
+          "properties": {
+            "type": {
+              "const": "true_false"
+            },
+            "answer": {
+              "type": "boolean"
+            },
+            "evaluation": {
+              "const": "automatic"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "tolerance": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "absolute": {
+              "type": "number",
+              "minimum": 0
+            },
+            "relative": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "numeric": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/common"
+        },
+        {
+          "type": "object",
+          "required": [
+            "answer"
+          ],
+          "properties": {
+            "type": {
+              "const": "numeric"
+            },
+            "answer": {
+              "type": "number"
+            },
+            "unit": {
+              "$ref": "common.schema.json#/$defs/nonEmptyString"
+            },
+            "tolerance": {
+              "$ref": "#/$defs/tolerance"
+            },
+            "evaluation": {
+              "const": "automatic"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "normalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trim": {
+          "type": "boolean",
+          "default": true
+        },
+        "case_sensitive": {
+          "type": "boolean",
+          "default": false
+        },
+        "collapse_whitespace": {
+          "type": "boolean",
+          "default": false
+        },
+        "unicode": {
+          "enum": [
+            "NFC",
+            "NFD",
+            "NFKC",
+            "NFKD",
+            "none"
+          ],
+          "default": "NFC"
+        }
+      }
+    },
+    "shortAnswer": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/common"
+        },
+        {
+          "type": "object",
+          "oneOf": [
+            {
+              "required": [
+                "answer"
+              ]
+            },
+            {
+              "required": [
+                "answers"
+              ]
+            }
+          ],
+          "properties": {
+            "type": {
+              "const": "short_answer"
+            },
+            "answer": {
+              "$ref": "common.schema.json#/$defs/nonEmptyString"
+            },
+            "answers": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "common.schema.json#/$defs/nonEmptyString"
+              }
+            },
+            "normalization": {
+              "$ref": "#/$defs/normalization"
+            },
+            "evaluation": {
+              "const": "automatic"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "completionFields": {
+      "type": "object",
+      "properties": {
+        "minimum_words": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minimum_sentences": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "keywords": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/$defs/nonEmptyString"
+          }
+        },
+        "minimum_keywords": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "dependentRequired": {
+        "minimum_keywords": [
+          "keywords"
+        ]
+      }
+    },
+    "essay": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/common"
+        },
+        {
+          "$ref": "#/$defs/completionFields"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "essay"
+            },
+            "rubric": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "evaluation": {
+              "enum": [
+                "manual",
+                "completion"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "rubric"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evaluation": {
+                "const": "manual"
+              }
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "openResponse": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/common"
+        },
+        {
+          "$ref": "#/$defs/completionFields"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "open_response"
+            },
+            "evaluation": {
+              "enum": [
+                "completion",
+                "ungraded"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {
+                "required": [
+                  "minimum_words"
+                ]
+              },
+              {
+                "required": [
+                  "minimum_sentences"
+                ]
+              },
+              {
+                "required": [
+                  "keywords"
+                ]
+              },
+              {
+                "required": [
+                  "minimum_keywords"
+                ]
+              }
+            ]
+          },
+          "then": {
+            "properties": {
+              "evaluation": {
+                "const": "completion"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "evaluation": {
+                "const": "ungraded"
+              }
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "textItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "text": {
+          "$ref": "common.schema.json#/$defs/nonEmptyString"
+        },
+        "feedback": {
+          "type": "string"
+        }
+      }
+    },
+    "matching": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/common"
+        },
+        {
+          "type": "object",
+          "required": [
+            "premises",
+            "responses",
+            "answer"
+          ],
+          "properties": {
+            "type": {
+              "const": "matching"
+            },
+            "premises": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/textItem"
+              }
+            },
+            "responses": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/textItem"
+              }
+            },
+            "answer": {
+              "type": "object",
+              "minProperties": 2,
+              "additionalProperties": {
+                "$ref": "common.schema.json#/$defs/id"
+              }
+            },
+            "reuse_responses": {
+              "type": "boolean",
+              "default": false
+            },
+            "scoring": {
+              "enum": [
+                "exact",
+                "partial"
+              ],
+              "default": "exact"
+            },
+            "evaluation": {
+              "const": "automatic"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "ordering": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/common"
+        },
+        {
+          "type": "object",
+          "required": [
+            "items",
+            "answer"
+          ],
+          "properties": {
+            "type": {
+              "const": "ordering"
+            },
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/textItem"
+              }
+            },
+            "answer": {
+              "type": "array",
+              "minItems": 2,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "common.schema.json#/$defs/id"
+              }
+            },
+            "scoring": {
+              "enum": [
+                "exact",
+                "partial"
+              ],
+              "default": "exact"
+            },
+            "evaluation": {
+              "const": "automatic"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

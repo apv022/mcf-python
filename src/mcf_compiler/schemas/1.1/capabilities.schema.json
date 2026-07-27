@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/apv022/mcf-spec/master/schemas/1.1/capabilities.schema.json",
+  "title": "MCF capability declaration 1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mcf_capabilities",
+    "implementation",
+    "mcf_versions",
+    "conformance",
+    "package_kinds",
+    "question_types"
+  ],
+  "properties": {
+    "mcf_capabilities": {
+      "const": "1.1"
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "common.schema.json#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "common.schema.json#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "mcf_versions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "1.0",
+          "1.1"
+        ]
+      }
+    },
+    "conformance": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "validator",
+          "reader",
+          "writer",
+          "package_reader",
+          "full"
+        ]
+      }
+    },
+    "package_kinds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "course",
+          "module",
+          "lesson",
+          "question_bank",
+          "asset_collection"
+        ]
+      }
+    },
+    "question_types": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "multiple_choice",
+          "multiple_select",
+          "true_false",
+          "numeric",
+          "short_answer",
+          "essay",
+          "open_response",
+          "matching",
+          "ordering"
+        ]
+      }
+    },
+    "activity_types": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "notes",
+          "practice",
+          "assessment",
+          "assignment"
+        ]
+      }
+    },
+    "features": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "archive",
+          "accessibility_assets",
+          "completion",
+          "localization",
+          "rubrics",
+          "question_banks"
+        ]
+      }
+    },
+    "extensions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+(?:\\.[a-z0-9-]+){2,}$"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "mcf_versions": {
+          "allOf": [
+            {
+              "contains": {
+                "const": "1.0"
+              }
+            },
+            {
+              "contains": {
+                "const": "1.1"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

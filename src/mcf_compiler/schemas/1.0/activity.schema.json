@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/apv022/mcf-spec/master/schemas/1.0/activity.schema.json",
+  "title": "MCF 1.0 activity header",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "id"
+  ],
+  "properties": {
+    "type": {
+      "enum": [
+        "notes",
+        "practice",
+        "assessment"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._-]*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "passing_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "randomize": {
+      "type": "boolean"
+    },
+    "question_pool_size": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "passing_score"
+        ]
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "const": "assessment"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "anyOf": [
+          {
+            "required": [
+              "randomize"
+            ]
+          },
+          {
+            "required": [
+              "question_pool_size"
+            ]
+          }
+        ]
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "practice",
+              "assessment"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/apv022/mcf-spec/master/schemas/1.1/rubric.schema.json",
+  "title": "MCF 1.1 rubric",
+  "$ref": "common.schema.json#/$defs/rubric"
+}

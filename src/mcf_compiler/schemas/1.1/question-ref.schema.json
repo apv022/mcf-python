@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/apv022/mcf-spec/master/schemas/1.1/question-ref.schema.json",
+  "title": "MCF 1.1 question-bank reference",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bank",
+    "question"
+  ],
+  "properties": {
+    "bank": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "question": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  }
+}

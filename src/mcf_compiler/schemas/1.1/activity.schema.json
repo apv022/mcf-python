@@ -1,0 +1,298 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/apv022/mcf-spec/master/schemas/1.1/activity.schema.json",
+  "title": "MCF 1.1 activity header",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "id"
+  ],
+  "properties": {
+    "type": {
+      "enum": [
+        "notes",
+        "practice",
+        "assessment",
+        "assignment"
+      ]
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "title": {
+      "$ref": "common.schema.json#/$defs/nonEmptyString"
+    },
+    "description": {
+      "type": "string"
+    },
+    "subjects": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/nonEmptyString"
+      }
+    },
+    "keywords": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/nonEmptyString"
+      }
+    },
+    "estimated_duration": {
+      "$ref": "common.schema.json#/$defs/duration"
+    },
+    "learning_outcomes": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/learningOutcome"
+      }
+    },
+    "passing_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "randomize": {
+      "type": "boolean"
+    },
+    "question_pool_size": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "evaluation": {
+      "enum": [
+        "automatic",
+        "manual",
+        "completion",
+        "ungraded"
+      ]
+    },
+    "submission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modes"
+      ],
+      "properties": {
+        "modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "text",
+              "file",
+              "url"
+            ]
+          }
+        },
+        "minimum_files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maximum_files": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "accepted_media_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9!#$&^_.+*-]+/[A-Za-z0-9!#$&^_.+*-]+$"
+          }
+        },
+        "maximum_file_size": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "rubric": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "notes"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evaluation": {
+            "const": "ungraded"
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "submission"
+              ]
+            },
+            {
+              "required": [
+                "rubric"
+              ]
+            },
+            {
+              "required": [
+                "passing_score"
+              ]
+            },
+            {
+              "required": [
+                "randomize"
+              ]
+            },
+            {
+              "required": [
+                "question_pool_size"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "practice"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evaluation": {
+            "enum": [
+              "automatic",
+              "manual",
+              "completion",
+              "ungraded"
+            ]
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "submission"
+              ]
+            },
+            {
+              "required": [
+                "rubric"
+              ]
+            },
+            {
+              "required": [
+                "passing_score"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "assessment"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evaluation": {
+            "enum": [
+              "automatic",
+              "manual",
+              "completion"
+            ]
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "submission"
+              ]
+            },
+            {
+              "required": [
+                "rubric"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "assignment"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "submission"
+        ],
+        "properties": {
+          "evaluation": {
+            "enum": [
+              "manual",
+              "completion",
+              "ungraded"
+            ]
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "passing_score"
+              ]
+            },
+            {
+              "required": [
+                "randomize"
+              ]
+            },
+            {
+              "required": [
+                "question_pool_size"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/apv022/mcf-spec/master/schemas/1.1/lesson-frontmatter.schema.json",
+  "title": "MCF 1.1 lesson frontmatter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title"
+  ],
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "title": {
+      "$ref": "common.schema.json#/$defs/nonEmptyString"
+    },
+    "description": {
+      "type": "string"
+    },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "common.schema.json#/$defs/nonEmptyString"
+      }
+    },
+    "license": {
+      "$ref": "common.schema.json#/$defs/nonEmptyString"
+    },
+    "subjects": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/nonEmptyString"
+      }
+    },
+    "keywords": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/nonEmptyString"
+      }
+    },
+    "level": {
+      "$ref": "common.schema.json#/$defs/level"
+    },
+    "estimated_duration": {
+      "$ref": "common.schema.json#/$defs/duration"
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/prerequisite"
+      }
+    },
+    "learning_outcomes": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/learningOutcome"
+      }
+    },
+    "rubrics": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/rubric"
+      }
+    },
+    "completion": {
+      "$ref": "common.schema.json#/$defs/completion"
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/relationship"
+      }
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  }
+}

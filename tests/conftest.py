@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 NODE_REPOSITORY = Path("/home/apv/mcf-npm")
-SPEC_REPOSITORY = Path("/home/apv/MCF-Specification")
+SPEC_REPOSITORY = Path("/home/apv/mcf-spec")
 
 
 @pytest.fixture

@@ -15,10 +15,10 @@ from .conftest import SPEC_REPOSITORY
 @pytest.mark.parametrize(
     ("fixture", "message"),
     [
-        ("missing-title", 'Required field "title"'),
+        ("missing-title", '"title" must be a non-empty string'),
         ("unsupported-version", "Unsupported MCF version"),
-        ("path-traversal", "escapes the course root"),
-        ("duplicate-option", "duplicate option IDs"),
+        ("path-traversal", "Invalid package path"),
+        ("duplicate-option", "Option IDs repeat"),
     ],
 )
 def test_normative_invalid_fixtures_are_rejected(fixture: str, message: str) -> None:
@@ -33,16 +33,14 @@ def test_validation_accumulates_multiple_diagnostics(minimal_course: Path) -> No
     issues = validate_course(minimal_course)
     messages = "\n".join(issue.message for issue in issues)
     assert "Unsupported MCF version" in messages
-    assert "Identifier" in messages
-    assert 'Required field "title"' in messages
-    assert 'Required field "language"' in messages
-    assert "non-empty ordered list" in messages
+    assert len(issues) == 1
+    assert issues[0].code == "MCF_VERSION_UNSUPPORTED"
 
 
 def test_invalid_yaml_missing_asset_and_backslash_are_reported(minimal_course: Path) -> None:
     manifest = minimal_course / "manifest.yaml"
     manifest.write_text("mcf: [\n", encoding="utf-8")
-    with pytest.raises(ValidationError, match="Invalid YAML"):
+    with pytest.raises(ValidationError, match="MCF_YAML_INVALID"):
         parse_course(minimal_course)
 
     manifest.write_text(

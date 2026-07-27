@@ -7,6 +7,7 @@ import re
 from typing import Any, cast
 
 from .model import Activity, Lesson, Option, Question, ValidationIssue
+from .schema import validate_schema
 from .yamlio import add_issue, as_object, load_yaml_text, optional_text, string_list, text
 
 ID_RE = re.compile(r"^[a-z][a-z0-9._-]*$")
@@ -45,6 +46,15 @@ def _positive_integer(value: object) -> bool:
 
 def parse_question(raw: str, file: str, issues: list[ValidationIssue]) -> Question | None:
     data = load_yaml_text(raw, file, issues, "mcf-question")
+    issues.extend(
+        validate_schema(
+            data,
+            "1.0",
+            "question.schema.json",
+            file,
+            code="MCF_QUESTION_FIELDS_INVALID",
+        )
+    )
     question_id = identifier(data, "id", file, issues)
     question_type = text(data, "type", file, issues) or "invalid"
     prompt = text(data, "prompt", file, issues) or ""
@@ -193,6 +203,15 @@ def parse_lesson_source(
         add_issue(diagnostics, file, "Lesson must begin with YAML frontmatter delimited by ---.")
         return Lesson(id="invalid", title="", source=file)
     front = load_yaml_text(match.group(1), file, diagnostics, "frontmatter")
+    diagnostics.extend(
+        validate_schema(
+            front,
+            "1.0",
+            "lesson-frontmatter.schema.json",
+            file,
+            code="MCF_LESSON_FRONTMATTER_INVALID",
+        )
+    )
     body = match.group(2)
     activities: list[Activity] = []
     cursor = 0
@@ -206,6 +225,15 @@ def parse_lesson_source(
             )
         cursor = found.end()
         metadata = load_yaml_text(found.group(1), file, diagnostics, "activity")
+        diagnostics.extend(
+            validate_schema(
+                metadata,
+                "1.0",
+                "activity.schema.json",
+                file,
+                code="MCF_ACTIVITY_HEADER_INVALID",
+            )
+        )
         activity_id = identifier(metadata, "id", file, diagnostics)
         activity_type = text(metadata, "type", file, diagnostics) or "invalid"
         if activity_type not in ACTIVITY_TYPES:

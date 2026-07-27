@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from mcf_compiler.compiler import compile_course
+from mcf_compiler.compiler import compile_course, compile_single_file
 
 from .conftest import NODE_REPOSITORY
 
@@ -39,6 +39,25 @@ def test_recompile_removes_stale_files_and_preserves_other_courses(tmp_path: Pat
     assert (tmp_path / "mcf-showcase/course.json").is_file()
     assert not list(tmp_path.glob(".minimal-course.tmp-*"))
     assert not (tmp_path / ".minimal-course.previous").exists()
+
+
+def test_mcf_10_standalone_mode_and_source_nonmutation(tmp_path: Path) -> None:
+    source = NODE_REPOSITORY / "examples/minimal"
+    before = {
+        path.relative_to(source): path.read_bytes() for path in source.rglob("*") if path.is_file()
+    }
+    result = compile_single_file(source, tmp_path / "minimal.html")
+    assert result.course.mcf == "1.0"
+    assert 'data-standalone="true"' in result.file.read_text(encoding="utf-8")
+    after = {
+        path.relative_to(source): path.read_bytes() for path in source.rglob("*") if path.is_file()
+    }
+    assert after == before
+
+
+def test_library_output_cannot_overlap_source(minimal_course: Path) -> None:
+    with pytest.raises(ValueError, match="overlaps"):
+        compile_course(minimal_course, minimal_course / "output")
 
 
 def test_internal_asset_symlink_keeps_authored_output_path(

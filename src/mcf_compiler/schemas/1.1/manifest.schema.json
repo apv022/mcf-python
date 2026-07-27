@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/apv022/mcf-spec/master/schemas/1.1/manifest.schema.json",
+  "title": "MCF 1.1 package manifest",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/course"
+    },
+    {
+      "$ref": "#/$defs/module"
+    },
+    {
+      "$ref": "#/$defs/lesson"
+    },
+    {
+      "$ref": "#/$defs/questionBank"
+    },
+    {
+      "$ref": "#/$defs/assetCollection"
+    }
+  ],
+  "$defs": {
+    "base": {
+      "type": "object",
+      "required": [
+        "mcf",
+        "id",
+        "title",
+        "language"
+      ],
+      "properties": {
+        "mcf": {
+          "const": "1.1"
+        },
+        "kind": {
+          "enum": [
+            "course",
+            "module",
+            "lesson",
+            "question_bank",
+            "asset_collection"
+          ],
+          "default": "course"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "title": {
+          "$ref": "common.schema.json#/$defs/nonEmptyString"
+        },
+        "language": {
+          "$ref": "common.schema.json#/$defs/language"
+        },
+        "version": {
+          "$ref": "common.schema.json#/$defs/nonEmptyString"
+        },
+        "cover": {
+          "$ref": "common.schema.json#/$defs/safePath"
+        },
+        "description": {
+          "type": "string"
+        },
+        "authors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/nonEmptyString"
+          }
+        },
+        "license": {
+          "$ref": "common.schema.json#/$defs/nonEmptyString"
+        },
+        "subjects": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/$defs/nonEmptyString"
+          }
+        },
+        "keywords": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/$defs/nonEmptyString"
+          }
+        },
+        "level": {
+          "$ref": "common.schema.json#/$defs/level"
+        },
+        "estimated_duration": {
+          "$ref": "common.schema.json#/$defs/duration"
+        },
+        "prerequisites": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/prerequisite"
+          }
+        },
+        "learning_outcomes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/learningOutcome"
+          }
+        },
+        "relationships": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/relationship"
+          }
+        },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/asset"
+          }
+        },
+        "rubrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/rubric"
+          }
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      }
+    },
+    "course": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/base"
+        },
+        {
+          "type": "object",
+          "required": [
+            "chapters"
+          ],
+          "properties": {
+            "kind": {
+              "const": "course"
+            },
+            "chapters": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "source"
+                ],
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "pattern": "^chapters/(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\\\\)(?!.*//).+$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "module": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/base"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "lessons"
+          ],
+          "properties": {
+            "kind": {
+              "const": "module"
+            },
+            "lessons": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "source"
+                ],
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "pattern": "^lessons/(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\\\\)(?!.*//).*\\.mcf$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "entryPackage": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/base"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "entry"
+          ],
+          "properties": {
+            "entry": {
+              "$ref": "common.schema.json#/$defs/safePath"
+            }
+          }
+        }
+      ]
+    },
+    "lesson": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/entryPackage"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "lesson"
+            },
+            "entry": {
+              "type": "string",
+              "pattern": "\\.mcf$"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "questionBank": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/entryPackage"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "question_bank"
+            },
+            "entry": {
+              "type": "string",
+              "pattern": "\\.ya?ml$"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "assetCollection": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/base"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "assets"
+          ],
+          "properties": {
+            "kind": {
+              "const": "asset_collection"
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

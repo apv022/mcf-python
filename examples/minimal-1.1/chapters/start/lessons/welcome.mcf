@@ -1,0 +1,15 @@
+---
+id: welcome
+title: Welcome
+---
+
+:::mcf-activity
+type: notes
+id: welcome-notes
+:::
+
+# Hello, MCF 1.1
+
+This local example exercises the MCF 1.1 course dispatch path.
+
+:::mcf-end

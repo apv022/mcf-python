@@ -114,7 +114,18 @@ def safe_url(url: str) -> str:
 def local_url(source: str, lesson: Lesson, course: Course) -> str:
     if re.match(r"^(?:https?:|youtube:)", source, re.IGNORECASE):
         return source
-    absolute = ((course.root / lesson.source).parent / source).resolve()
+    if source.startswith("asset:"):
+        asset_id = source.removeprefix("asset:")
+        declared = next(
+            (asset.get("source") for asset in course.assets or [] if asset.get("id") == asset_id),
+            None,
+        )
+        if not isinstance(declared, str):
+            return "#"
+        source = declared
+        absolute = (course.root / source).resolve()
+    else:
+        absolute = ((course.root / lesson.source).parent / source).resolve()
     try:
         relative = absolute.relative_to(course.root.resolve()).as_posix()
     except ValueError:
@@ -238,7 +249,15 @@ def question_html(question: Question, lesson: Lesson, course: Course, *, assessm
         input_type = "checkbox" if question.type == "multiple_select" else "radio"
         control = "\n".join(
             f'<label class="option"><input type="{input_type}" name="{escape(name)}" '
-            f'value="{escape(option.id)}"> <span>{rich(option.text, lesson, course)}</span></label>'
+            f'value="{escape(option.id)}"> <span>{rich(option.text, lesson, course)}</span>'
+            + (
+                f'<small class="response-feedback hidden" '
+                f'data-option-feedback="{escape(option.id)}">'
+                f"{rich(option.feedback, lesson, course)}</small>"
+                if option.feedback
+                else ""
+            )
+            + "</label>"
             for option in question.options or []
         )
     elif question.type == "true_false":
@@ -247,20 +266,54 @@ def question_html(question: Question, lesson: Lesson, course: Course, *, assessm
             f"{'True' if value == 'true' else 'False'}</label>"
             for value in ("true", "false")
         )
-    elif question.type == "essay":
-        control = '<textarea rows="7" aria-label="Essay response"></textarea>'
+    elif question.type in {"essay", "open_response"}:
+        label = "Essay" if question.type == "essay" else "Open"
+        control = f'<textarea rows="7" aria-label="{label} response"></textarea>'
+    elif question.type == "matching":
+        control = "\n".join(
+            '<label class="matching-item">'
+            f"<span>{rich(premise.text, lesson, course)}</span>"
+            f'<select data-premise="{escape(premise.id)}" '
+            f'aria-label="Match {escape(premise.text)}"><option value="">Choose…</option>'
+            + "".join(
+                f'<option value="{escape(response.id)}">{escape(response.text)}</option>'
+                for response in question.responses or []
+            )
+            + "</select></label>"
+            for premise in question.premises or []
+        )
+    elif question.type == "ordering":
+        control = '<ol class="ordering-list" aria-label="Items to order">' + "\n".join(
+            f'<li class="ordering-item" data-ordering-item="{escape(item.id)}">'
+            f"<span>{rich(item.text, lesson, course)}</span>"
+            '<span class="ordering-actions">'
+            f'<button type="button" data-move="up" aria-label="Move {escape(item.text)} up">'
+            "Move up</button>"
+            f'<button type="button" data-move="down" aria-label="Move {escape(item.text)} down">'
+            "Move down</button></span></li>"
+            for item in question.items or []
+        )
+        control += "</ol>"
     else:
         input_type = "number" if question.type == "numeric" else "text"
         step = ' step="any"' if question.type == "numeric" else ""
-        control = f'<input class="text-response" type="{input_type}"{step} aria-label="Response">'
-    hint_button = '<button class="hint-button" type="button">Hint</button>' if question.hint else ""
-    check_button = (
-        ""
-        if assessment
-        else (
-            '<button class="check-button" type="button">'
-            f"{'Check completion' if question.type == 'essay' else 'Check answer'}</button>"
+        unit = f'<span class="unit">{escape(question.unit)}</span>' if question.unit else ""
+        control = (
+            f'<div class="text-with-unit"><input class="text-response" '
+            f'type="{input_type}"{step} aria-label="Response">{unit}</div>'
         )
+    hint_button = '<button class="hint-button" type="button">Hint</button>' if question.hint else ""
+    check_label = (
+        "Submit response"
+        if question.evaluation in {"manual", "ungraded"}
+        else (
+            "Check completion"
+            if question.evaluation == "completion" or question.type in {"essay", "open_response"}
+            else "Check answer"
+        )
+    )
+    check_button = (
+        "" if assessment else f'<button class="check-button" type="button">{check_label}</button>'
     )
     hint = (
         f'<div class="hint hidden">{rich(question.hint, lesson, course)}</div>'
@@ -272,6 +325,18 @@ def question_html(question: Question, lesson: Lesson, course: Course, *, assessm
         if question.explanation
         else ""
     )
+    fallback = (
+        '<p class="evaluation-fallback">This response requires manual evaluation. '
+        "The static reader saves the response but does not assign correctness.</p>"
+        if question.evaluation == "manual"
+        else (
+            '<p class="evaluation-fallback">This ungraded response is saved without '
+            "correctness evaluation.</p>"
+            if question.evaluation == "ungraded"
+            else ""
+        )
+    )
+    rubric = _resolve_rubric(question.rubric, lesson, course)
     return f"""<section class="question" data-id="{escape(question.id)}"
   data-type="{escape(question.type)}">
   <div class="prompt">{rich(question.prompt, lesson, course)}</div>
@@ -280,7 +345,103 @@ def question_html(question: Question, lesson: Lesson, course: Course, *, assessm
   {hint}
   <div class="feedback" aria-live="polite"></div>
   {explanation}
+  {fallback}
+  {_rubric_html(rubric) if rubric else ""}
 </section>"""
+
+
+def _resolve_rubric(
+    rubric_id: str | None, lesson: Lesson, course: Course
+) -> dict[str, object] | None:
+    if not rubric_id:
+        return None
+    return next(
+        (
+            rubric
+            for rubric in [*(lesson.rubrics or []), *(course.rubrics or [])]
+            if rubric.get("id") == rubric_id
+        ),
+        None,
+    )
+
+
+def _rubric_html(rubric: dict[str, object]) -> str:
+    rows = []
+    criteria = rubric.get("criteria", [])
+    if not isinstance(criteria, list):
+        criteria = []
+    for criterion in criteria:
+        if not isinstance(criterion, dict):
+            continue
+        levels = "".join(
+            f"<li>{escape(level.get('description'))} — {escape(level.get('points'))} points</li>"
+            for level in criterion.get("levels", [])
+            if isinstance(level, dict)
+        )
+        rows.append(
+            f'<tr><th scope="row">{escape(criterion.get("description"))}</th>'
+            f"<td><ul>{levels}</ul></td></tr>"
+        )
+    return (
+        f'<section class="rubric" aria-label="{escape(rubric.get("title"))} rubric">'
+        f"<h3>{escape(rubric.get('title'))}</h3>"
+        f"<table><thead><tr><th>Criterion</th><th>Levels</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table>"
+        "<p>Review against this rubric is required; the static reader does not grade it.</p>"
+        "</section>"
+    )
+
+
+def _assignment_html(activity: object, lesson: Lesson, course: Course) -> str:
+    submission = getattr(activity, "submission", None)
+    if not isinstance(submission, dict):
+        return ""
+    modes = submission.get("modes", [])
+    controls = []
+    if "text" in modes:
+        controls.append(
+            '<label>Text response<textarea rows="6" data-assignment-text></textarea></label>'
+        )
+    if "url" in modes:
+        controls.append('<label>URL response<input type="url" data-assignment-url></label>')
+    if "file" in modes:
+        multiple = "" if submission.get("maximum_files") == 1 else " multiple"
+        accept = submission.get("accepted_media_types")
+        accept_attr = (
+            f' accept="{escape(",".join(accept))}' + '"' if isinstance(accept, list) else ""
+        )
+        controls.append(
+            f'<label>Choose local file metadata<input type="file" '
+            f"data-assignment-files{multiple}{accept_attr}></label>"
+        )
+    fields = [f"<dt>Modes</dt><dd>{escape(', '.join(modes))}</dd>"]
+    for key, label in (
+        ("minimum_files", "Minimum files"),
+        ("maximum_files", "Maximum files"),
+        ("maximum_file_size", "Maximum file size"),
+    ):
+        if key in submission:
+            suffix = " bytes" if key == "maximum_file_size" else ""
+            fields.append(f"<dt>{label}</dt><dd>{escape(submission[key])}{suffix}</dd>")
+    if submission.get("accepted_media_types"):
+        fields.append(
+            "<dt>Accepted media types</dt>"
+            f"<dd>{escape(', '.join(submission['accepted_media_types']))}</dd>"
+        )
+    fields.append(
+        f"<dt>Evaluation</dt><dd>{escape(getattr(activity, 'evaluation', None) or 'manual')}</dd>"
+    )
+    rubric = _resolve_rubric(getattr(activity, "rubric", None), lesson, course)
+    return (
+        '<section class="assignment-ui"><h3>Submission requirements</h3>'
+        f"<dl>{''.join(fields)}</dl>{''.join(controls)}"
+        '<button type="button" class="assignment-submit">Submit locally</button>'
+        '<p class="assignment-result" aria-live="polite"></p>'
+        "<p>Text and URL responses can be stored in this browser. File names remain "
+        "available only for this browser session. Persistent upload and instructor "
+        "delivery require a host platform.</p>"
+        f"{_rubric_html(rubric) if rubric else ''}</section>"
+    )
 
 
 def lesson_body(lesson: Lesson, course: Course) -> str:
@@ -308,6 +469,9 @@ def lesson_body(lesson: Lesson, course: Course) -> str:
             if activity.type == "assessment"
             else ""
         )
+        assignment_fallback = (
+            _assignment_html(activity, lesson, course) if activity.type == "assignment" else ""
+        )
         sections.append(
             f"""<section class="activity" data-activity="{escape(activity.id)}"
   data-type="{escape(activity.type)}">
@@ -315,6 +479,7 @@ def lesson_body(lesson: Lesson, course: Course) -> str:
   <div class="questions">{body}</div>
   {notes_button}
   {assessment_button}
+  {assignment_fallback}
 </section>"""
         )
     return "\n".join(sections)

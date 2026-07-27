@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from .model import Activity, Course, Lesson, ValidationError, ValidationIssue
-from .parser import parse_course
+from .package import ParseOptions, parse_course
 from .render import encoded_lesson_id, escape, lesson_body, page
 
 
@@ -39,25 +39,34 @@ def _without_none(value: Any) -> Any:
 
 
 def unique_lessons(course: Course) -> list[Lesson]:
-    lessons: dict[str, Lesson] = {}
-    for chapter in course.chapters:
-        for lesson in chapter.lessons:
-            lessons.setdefault(lesson.id, lesson)
-    return list(lessons.values())
+    return [lesson for chapter in course.chapters for lesson in chapter.lessons]
 
 
 def _activity_data(activity: Activity) -> dict[str, Any]:
     value = asdict(activity)
-    value.pop("content", None)
+    metadata = value.pop("metadata", {})
+    value.update(metadata)
+    return cast(dict[str, Any], _without_none(value))
+
+
+def _lesson_data(lesson: Lesson) -> dict[str, Any]:
+    value = asdict(lesson)
+    metadata = value.pop("metadata", {})
+    value.update(metadata)
+    value["activities"] = [_activity_data(activity) for activity in lesson.activities]
     return cast(dict[str, Any], _without_none(value))
 
 
 def course_data(course: Course) -> dict[str, Any]:
     lessons = unique_lessons(course)
+    source_kind = str(course.metadata.get("_source_kind", course.kind))
     return cast(
         dict[str, Any],
         _without_none(
             {
+                **{key: value for key, value in course.metadata.items() if not key.startswith("_")},
+                "mcf": course.mcf,
+                "kind": source_kind,
                 "id": course.id,
                 "title": course.title,
                 "language": course.language,
@@ -66,16 +75,29 @@ def course_data(course: Course) -> dict[str, Any]:
                 "license": course.license,
                 "version": course.version,
                 "cover": course.cover,
+                "relationships": course.relationships,
+                "assets": course.assets,
+                "rubrics": course.rubrics,
+                "extensions": course.extensions,
+                "lesson": _lesson_data(lessons[0]) if source_kind == "lesson" and lessons else None,
                 "chapters": [
                     {
+                        **chapter.metadata,
                         "id": chapter.id,
                         "title": chapter.title,
                         "description": chapter.description,
+                        "extensions": chapter.extensions,
                         "lessons": [
                             {
+                                **lesson.metadata,
                                 "id": lesson.id,
                                 "title": lesson.title,
                                 "description": lesson.description,
+                                "authors": lesson.authors,
+                                "license": lesson.license,
+                                "rubrics": lesson.rubrics,
+                                "completion": lesson.completion,
+                                "extensions": lesson.extensions,
                                 "activities": [
                                     _activity_data(activity) for activity in lesson.activities
                                 ],
@@ -87,8 +109,15 @@ def course_data(course: Course) -> dict[str, Any]:
                 ],
                 "lessons": [
                     {
+                        **lesson.metadata,
                         "id": lesson.id,
                         "title": lesson.title,
+                        "description": lesson.description,
+                        "authors": lesson.authors,
+                        "license": lesson.license,
+                        "rubrics": lesson.rubrics,
+                        "completion": lesson.completion,
+                        "extensions": lesson.extensions,
                         "activities": [_activity_data(activity) for activity in lesson.activities],
                     }
                     for lesson in lessons
@@ -96,6 +125,10 @@ def course_data(course: Course) -> dict[str, Any]:
             }
         ),
     )
+
+
+def _kind_label(course: Course) -> str:
+    return str(course.metadata.get("_source_kind", "course"))
 
 
 def _json(value: object) -> str:
@@ -182,8 +215,51 @@ def _copy_referenced_files(course: Course, target: Path) -> None:
                     ("http:", "https:", "youtube:", "mailto:")
                 ) or reference.startswith("#"):
                     continue
-                source = (course.root / lesson.source).parent / reference
+                if reference.startswith("asset:"):
+                    asset_id = reference.removeprefix("asset:")
+                    declared = next(
+                        (
+                            asset.get("source")
+                            for asset in course.assets or []
+                            if asset.get("id") == asset_id
+                        ),
+                        None,
+                    )
+                    if not isinstance(declared, str):
+                        continue
+                    source = course.root / declared
+                else:
+                    source = (course.root / lesson.source).parent / reference
                 _copy_course_file(course, source, target)
+
+
+def _contains(parent: Path, child: Path) -> bool:
+    try:
+        child.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
+def _canonical_future(path: Path) -> Path:
+    cursor = path.absolute()
+    suffix: list[str] = []
+    while not cursor.exists() and cursor.parent != cursor:
+        suffix.append(cursor.name)
+        cursor = cursor.parent
+    resolved = cursor.resolve()
+    return resolved.joinpath(*reversed(suffix))
+
+
+def _assert_safe_library_output(course: Course, output: Path) -> None:
+    source = course.root.resolve()
+    output = _canonical_future(output)
+    target = _canonical_future(output / course.id)
+    if _contains(source, output) or _contains(source, target) or _contains(target, source):
+        raise ValueError(
+            "Library output overlaps the source course package. "
+            "Choose an output directory outside the source package."
+        )
 
 
 def sidebar(course: Course, current: str | None = None) -> str:
@@ -203,7 +279,7 @@ def sidebar(course: Course, current: str | None = None) -> str:
     </div>"""
         )
     return f"""<aside class="sidebar">
-  <a href="../index.html">← Course library</a>
+  <a href="../index.html">← Learning library</a>
   <h1>{escape(course.title)}</h1>
   <div class="progress"><i data-progress-bar style="width:0"></i></div>
   <b data-progress>0%</b>
@@ -226,7 +302,7 @@ def lesson_page(course: Course, lesson: Lesson, index: int, lessons: list[Lesson
         f'<a class="button" href="{encoded_lesson_id(following.id)}.html">'
         f"{escape(following.title)} →</a>"
         if following
-        else '<a class="button" href="../index.html">Course overview</a>'
+        else f'<a class="button" href="../index.html">{_kind_label(course).title()} overview</a>'
     )
     description = f"<p>{escape(lesson.description)}</p>" if lesson.description else ""
     body = f"""<div class="course-shell">
@@ -241,7 +317,7 @@ def lesson_page(course: Course, lesson: Lesson, index: int, lessons: list[Lesson
 {lesson_body(lesson, course)}
     <div class="badge hidden">
       <div class="badge-mark">✓</div>
-      <h2>Course complete</h2>
+      <h2>{_kind_label(course).title()} complete</h2>
       <p>{escape(course.title)}</p>
       <p>Completed <span data-completion-date></span></p>
     </div>
@@ -277,6 +353,7 @@ def _library_entry(course: Course) -> dict[str, Any]:
                 "authors": course.authors,
                 "version": course.version,
                 "cover": course.cover,
+                "kind": _kind_label(course),
                 "lessons": [lesson.id for lesson in unique_lessons(course)],
             }
         ),
@@ -305,21 +382,26 @@ def update_library(output: Path, course: Course) -> None:
     library_body = """<main class="library">
   <header>
     <span class="eyebrow">Local-first learning</span>
-    <h1>Course library</h1>
-    <p>Your compiled MCF courses, available offline.</p>
+    <h1>Learning library</h1>
+    <p>Your compiled MCF packages, available offline.</p>
   </header>
   <section id="courses" class="course-grid"></section>
 </main>"""
     _atomic_write(
         output / "index.html",
-        page("MCF Course Library", "en", library_body, "styles.css", "library.js"),
+        page("MCF Learning Library", "en", library_body, "styles.css", "library.js"),
     )
     _atomic_write(output / "styles.css", reader_styles())
 
 
-def compile_course(input_path: str | Path, output: str | Path = "courses") -> CompileResult:
-    course = parse_course(input_path)
+def compile_course(
+    input_path: str | Path,
+    output: str | Path = "courses",
+    options: ParseOptions | None = None,
+) -> CompileResult:
+    course = parse_course(input_path, options)
     output_root = Path(output).expanduser().resolve()
+    _assert_safe_library_output(course, output_root)
     if output_root.exists() and not output_root.is_dir():
         raise OSError(f"Output path is not a directory: {output_root}")
     output_root.mkdir(parents=True, exist_ok=True)
@@ -354,7 +436,8 @@ def compile_course(input_path: str | Path, output: str | Path = "courses") -> Co
     <p>{escape(", ".join(course.authors or []))}</p>
     <div class="progress"><i data-progress-bar></i></div>
     <b data-progress>0%</b>
-    <p><a class="button" href="lessons/{encoded_lesson_id(lessons[0].id)}.html">Start course</a></p>
+    <p><a class="button" href="lessons/{encoded_lesson_id(lessons[0].id)}.html">\
+Start {_kind_label(course)}</a></p>
     <div class="progress-actions">
       <button data-export>Export progress</button>
       <label class="button">Import progress<input data-import type="file"
@@ -362,7 +445,7 @@ def compile_course(input_path: str | Path, output: str | Path = "courses") -> Co
     </div>
     <div class="badge hidden">
       <div class="badge-mark">✓</div>
-      <h2>Course complete</h2>
+      <h2>{_kind_label(course).title()} complete</h2>
       <p>{escape(course.title)}</p>
       <p>Completed <span data-completion-date></span></p>
     </div>
@@ -445,8 +528,12 @@ def _standalone_sidebar(course: Course) -> str:
     )
 
 
-def compile_single_file(input_path: str | Path, output: str | Path) -> SingleFileResult:
-    course = parse_course(input_path)
+def compile_single_file(
+    input_path: str | Path,
+    output: str | Path,
+    options: ParseOptions | None = None,
+) -> SingleFileResult:
+    course = parse_course(input_path, options)
     root = course.root.resolve()
     target = Path(output).expanduser().resolve()
     if target == root or root in target.parents:
@@ -454,7 +541,6 @@ def compile_single_file(input_path: str | Path, output: str | Path) -> SingleFil
     lessons = unique_lessons(course)
     sections = []
     data = course_data(course)
-    section_html = "\n".join(sections)
     for index, lesson in enumerate(lessons):
         description = f"<p>{escape(lesson.description)}</p>" if lesson.description else ""
         sections.append(
@@ -464,6 +550,7 @@ def compile_single_file(input_path: str | Path, output: str | Path) -> SingleFil
             f"{len(lessons)}</span><h1>{escape(lesson.title)}</h1>{description}</header>"
             f"{lesson_body(lesson, course)}</section>"
         )
+    section_html = "\n".join(sections)
     body = (
         "<style>.standalone-lesson{display:none}.standalone-lesson.active{display:block}</style>"
         f'<div class="course-shell standalone"><div>{_standalone_sidebar(course)}</div>'
@@ -471,7 +558,8 @@ def compile_single_file(input_path: str | Path, output: str | Path) -> SingleFil
         f'<section class="standalone-overview"><h1>{escape(course.title)}</h1>'
         f"<p>{escape(course.description or '')}</p>"
         f"<p>{escape(', '.join(course.authors or []))}</p></section>{section_html}"
-        f'<div class="badge hidden"><div class="badge-mark">✓</div><h2>Course complete</h2>'
+        f'<div class="badge hidden"><div class="badge-mark">✓</div>'
+        f"<h2>{_kind_label(course).title()} complete</h2>"
         f"<p>{escape(course.title)}</p><p>Completed <span data-completion-date></span></p>"
         "</div></div></main></div>"
         f"<script>window.MCF_COURSE = {_json(data)};</script>"

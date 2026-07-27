@@ -1,6 +1,6 @@
 # mcf-compiler
 
-`mcf-compiler` is a typed Python compiler for [Modular Curriculum Format (MCF) 1.0](https://github.com/apv022/MCF-Specification). It validates a human-readable course package and produces the same general static, offline-first course library used by the reference `mcf-npm` compiler.
+`mcf-compiler` is a typed Python validator and compiler for [Modular Curriculum Format (MCF) 1.0 and 1.1](https://github.com/apv022/mcf-spec). It performs exact declared-version dispatch, reads directory and `.mcf.zip` packages, and produces the same static, offline-first course library used by the reference `mcf-npm` compiler.
 
 MCF is the standardized source format. Generated HTML, navigation, grading presentation, browser storage, progress export/import, and the completion badge are reader implementation features and do not extend the MCF specification.
 
@@ -25,7 +25,9 @@ Use the installed command:
 
 ```bash
 mcf --help
-mcf validate /path/to/course
+mcf validate /path/to/package --format json
+mcf inspect /path/to/package
+mcf capabilities --format yaml
 mcf compile /path/to/course --output ./courses
 mcf compile /path/to/course --single-file ./exports/course.html
 ```
@@ -39,7 +41,12 @@ python -m mcf_compiler compile /path/to/course --output ./courses
 python -m mcf_compiler compile /path/to/course --single-file ./exports/course.html
 ```
 
-`--output` is the normal multi-file library mode. `--single-file` creates one standalone HTML document containing the reader UI, course data, lessons, styles, scripts, KaTeX resources, and local media. The destination parent is created when needed, and recompilation atomically replaces the destination. The options are mutually exclusive, validation runs before output is written, and the standalone destination must be outside the source package.
+The repository includes `examples/minimal` for MCF 1.0 and
+`examples/minimal-1.1` for MCF 1.1.
+
+`validate`, `inspect`, and `compile` accept `--expected-version 1.0|1.1`, repeatable `--package` dependency inputs, and `--allow-remote`. Diagnostics support text or JSON. Exit status 2 is a validation failure, 3 is a version mismatch, 4 is an unsupported required extension, and 5 is a security-policy rejection.
+
+`--output` is the normal multi-file library mode. `--single-file` creates one standalone HTML document containing the reader UI, course data, lessons, styles, scripts, KaTeX resources, and local media. The destination parent is created when needed, and recompilation atomically replaces the destination. Validation runs before output is written, and all output must be outside the source package.
 
 Standalone files open directly as local files without Python, Node.js, a server, sibling files, or an internet connection for local course content. Explicitly remote URLs and YouTube still require the network; YouTube retains the direct-file fallback behavior.
 
@@ -68,11 +75,12 @@ The manifest declares chapter order, and each `chapter.yaml` declares lesson ord
 
 ```yaml
 # manifest.yaml
-mcf: '1.0'
+mcf: '1.1'
+kind: course
 id: example-course
 title: Example Course
 language: en
-version: '1.0.0'
+version: '1.1.0'
 chapters:
   - source: chapters/introduction
 ```
@@ -116,7 +124,7 @@ explanation: This is an MCF course.
 :::mcf-end
 ````
 
-MCF 1.0 activity types are `notes`, `practice`, and `assessment`. Question types are `multiple_choice`, `multiple_select`, `true_false`, `numeric`, `short_answer`, and `essay`. Practice and assessment support `randomize` and `question_pool_size`; assessments additionally support `passing_score`. Essays may require minimum words, sentences, and keyword coverage, but are never objectively graded.
+MCF 1.1 supports `course`, `module`, `lesson`, `question_bank`, and `asset_collection` packages. Activity types are `notes`, `practice`, `assessment`, and `assignment`; question types add `open_response`, `matching`, and `ordering` to the six 1.0 types. It also defines evaluation modes, submissions, rubrics, completion expressions, relationships, declared assets, question-bank references, and namespaced extensions. MCF 1.0 packages retain their original parser and semantics.
 
 Rich content supports CommonMark, tables, fenced code, links, images, inline `$x$` and display `$$x$$` math, plus audio and video directives:
 
@@ -127,7 +135,7 @@ Rich content supports CommonMark, tables, fenced code, links, images, inline `$x
 @[video](youtube:VIDEO_ID "Online video")
 ```
 
-See [Authoring](docs/authoring.md) for complete field rules and [Architecture](docs/architecture.md) for module boundaries, security, reader synchronization, and extension points. The upstream specification remains normative.
+See [Authoring](docs/authoring.md) for field rules, [Architecture](docs/architecture.md) for module boundaries and security, and the [1.1.0 migration notes](docs/migration-1.1.md) for API compatibility details. The upstream specification remains normative.
 
 ## Generated output
 
@@ -159,7 +167,11 @@ compile_single_file("./my-course", "./exports/my-course.html")
 
 ## Compatibility and limitations
 
-The browser JavaScript and CSS are copied unchanged from `mcf-npm` 1.0.0. `scripts/check_reader_sync.py` detects divergence against a local reference checkout. The Python renderer produces the same reader data shape, data attributes, navigation, media markup, storage identifiers, and output paths.
+The browser JavaScript and CSS are copied unchanged from the current `mcf-npm` reference. `scripts/check_reader_sync.py` detects divergence against a local reference checkout. The Python renderer produces the same reader data shape, data attributes, navigation, media markup, storage identifiers, and output paths.
+
+MCF 1.1 YAML is restricted to finite JSON-compatible values with string keys and no duplicate keys, tags, anchors, aliases, merge keys, or byte-order marks. Archives reject traversal, duplicate/encrypted/special entries and enforce limits of 4,096 entries, 64 MiB per entry, 512 MiB total expanded bytes, and a 200:1 compression ratio. Remote resources are never fetched during ordinary validation or compilation.
+
+Capability declarations intentionally claim no formal conformance classes until every canonical diagnostic trigger and semantic class is implemented. Run `mcf capabilities` for the exact supported versions, package kinds, question types, features, extensions, and limits.
 
 Markdown is generated with `markdown-it-py` CommonMark plus tables and sanitized with Bleach. Math is converted to accessible MathML at compile time and wrapped in KaTeX-compatible `katex`/`katex-display` classes. This is visually browser-native and handles malformed expressions without aborting compilation, but its inner math markup is intentionally not byte-identical to Node KaTeX HTML. No Node runtime or CDN is required.
 
