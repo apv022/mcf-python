@@ -15,6 +15,7 @@ from typing import Any, cast
 
 from .model import Activity, Course, Lesson, ValidationError, ValidationIssue
 from .package import ParseOptions, parse_course
+from .references import markdown_references
 from .render import encoded_lesson_id, escape, lesson_body, page
 
 
@@ -198,9 +199,6 @@ def _copy_source_assets(course: Course, target: Path) -> None:
 def _copy_referenced_files(course: Course, target: Path) -> None:
     if course.cover and not course.cover.lower().startswith(("http:", "https:")):
         _copy_course_file(course, course.root / course.cover, target)
-    reference_pattern = __import__("re").compile(
-        r"!?\[[^\]]*\]\(([^\s)]+)|@\[(?:audio|video)\]\(([^\s)]+)"
-    )
     for lesson in unique_lessons(course):
         fields: list[str] = []
         for activity in lesson.activities:
@@ -209,8 +207,7 @@ def _copy_referenced_files(course: Course, target: Path) -> None:
                 fields.extend([question.prompt, question.hint or "", question.explanation or ""])
                 fields.extend(option.text for option in question.options or [])
         for content in fields:
-            for match in reference_pattern.finditer(content):
-                reference = match.group(1) or match.group(2)
+            for reference in markdown_references(content):
                 if reference.lower().startswith(
                     ("http:", "https:", "youtube:", "mailto:")
                 ) or reference.startswith("#"):

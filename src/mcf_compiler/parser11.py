@@ -11,6 +11,7 @@ from typing import Any, cast
 from .model import Activity, Chapter, Lesson, McfPackage, Option, Question, ValidationIssue
 from .package_reader import valid_package_path
 from .paths import is_really_contained
+from .references import markdown_references
 from .schema import validate_schema
 from .yaml_profile import diagnostic, parse_mcf_yaml
 
@@ -48,15 +49,8 @@ QUESTION_TYPES = {
 }
 OBJECTIVE = QUESTION_TYPES - {"essay", "open_response"}
 ACTIVITY_TYPES = {"notes", "practice", "assessment", "assignment"}
-FRONTMATTER = re.compile(r"^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$")
-ACTIVITY = re.compile(
-    r":::mcf-activity[ \t]*\r?\n([\s\S]*?)\r?\n:::[ \t]*\r?\n"
-    r"([\s\S]*?)\r?\n:::mcf-end(?:[ \t]*\r?\n|[ \t]*$)"
-)
-QUESTION = re.compile(r"```mcf-question[ \t]*\r?\n([\s\S]*?)\r?\n```")
-QUESTION_REF = re.compile(r"```mcf-question-ref[ \t]*\r?\n([\s\S]*?)\r?\n```")
 COMMENT = re.compile(r"<!--[\s\S]*?-->")
-REFERENCE = re.compile(r"!?\[[^\]]*\]\(([^)\s]+)|@\[(?:audio|video)\]\(([^)\s]+)")
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 COMMON_METADATA = {
     "subjects",
     "keywords",
@@ -99,6 +93,19 @@ def _mapping(
         return cast(dict[str, Any], value)
     _add(issues, code, file, "Expected a YAML mapping.")
     return {}
+
+
+def _fence(line: str) -> tuple[str, int, str] | None:
+    match = FENCE.fullmatch(line)
+    if match is None or (match.group(1).startswith("`") and "`" in match.group(2)):
+        return None
+    marker = match.group(1)
+    return marker[0], len(marker), match.group(2).strip()
+
+
+def _closing_fence(line: str, marker: str, length: int) -> bool:
+    found = _fence(line)
+    return found is not None and found[0] == marker and found[1] >= length and not found[2]
 
 
 def _required_string(
@@ -672,16 +679,38 @@ def parse_lesson11(
     issues: list[ValidationIssue],
     supported_extensions: set[str],
 ) -> Lesson:
-    match = FRONTMATTER.fullmatch(source)
-    if match is None:
+    if "\r" in source.replace("\r\n", ""):
         _add(
             issues,
             "MCF_LESSON_FRONTMATTER_INVALID",
             file,
-            "Lesson must begin with one YAML frontmatter block.",
+            "Lone CR line endings are invalid.",
+        )
+    source = source.replace("\r\n", "\n")
+    lines = source.split("\n")
+    if not lines or lines[0] != "---":
+        _add(
+            issues,
+            "MCF_LESSON_FRONTMATTER_INVALID",
+            file,
+            "Lesson must begin with exact --- frontmatter.",
         )
         return Lesson("invalid", "", file)
-    front = _mapping(parse_mcf_yaml(match.group(1), file, issues), issues, file)
+    try:
+        front_end = lines.index("---", 1)
+    except ValueError:
+        _add(
+            issues,
+            "MCF_LESSON_FRONTMATTER_INVALID",
+            file,
+            "Unterminated lesson frontmatter.",
+        )
+        return Lesson("invalid", "", file)
+    front = _mapping(
+        parse_mcf_yaml("\n".join(lines[1:front_end]), file, issues),
+        issues,
+        file,
+    )
     issues.extend(
         validate_schema(
             front,
@@ -691,19 +720,32 @@ def parse_lesson11(
             code="MCF_LESSON_FRONTMATTER_INVALID",
         )
     )
-    body = match.group(2)
     activities: list[Activity] = []
-    cursor = 0
-    for found in ACTIVITY.finditer(body):
-        if COMMENT.sub("", body[cursor : found.start()]).strip():
+    cursor = front_end + 1
+    outside_start = cursor
+    while cursor < len(lines):
+        if lines[cursor] != ":::mcf-activity":
+            cursor += 1
+            continue
+        if COMMENT.sub("", "\n".join(lines[outside_start:cursor])).strip():
             _add(
                 issues,
                 "MCF_LESSON_CONTENT_OUTSIDE_ACTIVITY",
                 file,
                 "Lesson content occurs outside an activity.",
             )
-        cursor = found.end()
-        metadata = _mapping(parse_mcf_yaml(found.group(1), file, issues), issues, file)
+        header_start = cursor + 1
+        cursor = header_start
+        while cursor < len(lines) and lines[cursor] != ":::":
+            cursor += 1
+        if cursor >= len(lines):
+            _add(issues, "MCF_ACTIVITY_UNTERMINATED", file, "Unterminated activity header.")
+            break
+        metadata = _mapping(
+            parse_mcf_yaml("\n".join(lines[header_start:cursor]), file, issues),
+            issues,
+            file,
+        )
         issues.extend(
             validate_schema(
                 metadata,
@@ -753,38 +795,75 @@ def parse_lesson11(
             )
         questions: list[Question] = []
         references: list[dict[str, Any]] = []
-
-        def question_replace(
-            question_match: re.Match[str], target: list[Question] = questions
-        ) -> str:
-            parsed = parse_question11(
-                parse_mcf_yaml(
-                    question_match.group(1),
-                    file,
-                    issues,
-                    "MCF_QUESTION_YAML_INVALID",
-                ),
+        body_start = cursor + 1
+        cursor = body_start
+        active_fence: tuple[str, int] | None = None
+        while cursor < len(lines):
+            found_fence = _fence(lines[cursor])
+            if found_fence is not None:
+                if active_fence is None:
+                    active_fence = (found_fence[0], found_fence[1])
+                elif _closing_fence(lines[cursor], *active_fence):
+                    active_fence = None
+            if active_fence is None and lines[cursor] == ":::mcf-activity":
+                _add(issues, "MCF_ACTIVITY_NESTED", file, "Nested activities are not permitted.")
+            if active_fence is None and lines[cursor] == ":::mcf-end":
+                break
+            cursor += 1
+        if cursor >= len(lines):
+            _add(issues, "MCF_ACTIVITY_UNTERMINATED", file, "Unterminated activity.")
+            break
+        body_lines = lines[body_start:cursor]
+        rendered: list[str] = []
+        index = 0
+        while index < len(body_lines):
+            opening = _fence(body_lines[index])
+            if opening is None:
+                rendered.append(body_lines[index])
+                index += 1
+                continue
+            close = index + 1
+            while close < len(body_lines) and not _closing_fence(
+                body_lines[close], opening[0], opening[1]
+            ):
+                close += 1
+            if close >= len(body_lines):
+                rendered.extend(body_lines[index:])
+                break
+            if opening[2] not in {"mcf-question", "mcf-question-ref"}:
+                rendered.extend(body_lines[index : close + 1])
+                index = close + 1
+                continue
+            issue_count = len(issues)
+            raw = parse_mcf_yaml(
+                "\n".join(body_lines[index + 1 : close]),
                 file,
                 issues,
-                supported_extensions,
+                "MCF_QUESTION_YAML_INVALID",
             )
-            if parsed:
-                target.append(parsed)
-            return f'\n<div data-mcf-question="{parsed.id if parsed else "invalid"}"></div>\n'
-
-        content = QUESTION.sub(question_replace, found.group(2))
-
-        def reference_replace(
-            reference_match: re.Match[str],
-            target: list[dict[str, Any]] = references,
-        ) -> str:
-            raw = _mapping(parse_mcf_yaml(reference_match.group(1), file, issues), issues, file)
-            bank = _id(raw.get("bank"), issues, file)
-            question = _id(raw.get("question"), issues, file)
-            target.append({"bank": bank, "question": question})
-            return f'\n<div data-mcf-question-ref="{bank}:{question}"></div>\n'
-
-        content = QUESTION_REF.sub(reference_replace, content)
+            yaml_failed = len(issues) != issue_count
+            if opening[2] == "mcf-question":
+                parsed = (
+                    None
+                    if yaml_failed
+                    else parse_question11(raw, file, issues, supported_extensions)
+                )
+                if parsed is not None:
+                    questions.append(parsed)
+                rendered.append(
+                    f'<div data-mcf-question="{parsed.id if parsed else "invalid"}"></div>'
+                )
+            else:
+                if yaml_failed:
+                    rendered.append('<div data-mcf-question-ref="invalid"></div>')
+                else:
+                    raw_ref = _mapping(raw, issues, file, "MCF_QUESTION_FIELDS_INVALID")
+                    bank = _id(raw_ref.get("bank"), issues, file)
+                    question = _id(raw_ref.get("question"), issues, file)
+                    references.append({"bank": bank, "question": question})
+                    rendered.append(f'<div data-mcf-question-ref="{bank}:{question}"></div>')
+            index = close + 1
+        content = "\n".join(rendered)
         passing = metadata.get("passing_score")
         if passing is not None and (
             activity_type != "assessment"
@@ -839,15 +918,15 @@ def parse_lesson11(
                 metadata={key: metadata[key] for key in COMMON_METADATA if key in metadata},
             )
         )
-    if COMMENT.sub("", body[cursor:]).strip():
+        cursor += 1
+        outside_start = cursor
+    if COMMENT.sub("", "\n".join(lines[outside_start:])).strip():
         _add(
             issues,
             "MCF_ACTIVITY_UNTERMINATED",
             file,
             "Unterminated activity or content outside an activity.",
         )
-    if ":::mcf-activity" in "".join(activity.content for activity in activities):
-        _add(issues, "MCF_ACTIVITY_NESTED", file, "Nested activities are not permitted.")
     if not activities:
         _add(issues, "MCF_SCHEMA_INVALID", file, "Lesson requires at least one activity.")
     if len({item.id for item in activities}) != len(activities):
@@ -1099,8 +1178,7 @@ def parse_package11(
                     ]
                 )
             for content in rich_fields:
-                for match in REFERENCE.finditer(content):
-                    reference = match.group(1) or match.group(2)
+                for reference in markdown_references(content):
                     if reference.startswith("asset:"):
                         if reference.removeprefix("asset:") not in asset_ids:
                             _add(

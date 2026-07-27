@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+from pathlib import Path
 
 import yaml
 
@@ -179,6 +180,120 @@ def test_rubric_and_completion_diagnostic_triggers() -> None:
         "lesson.mcf",
     )
     assert {issue.code for issue in invalid} == {"MCF_COMPLETION_REFERENCE_UNRESOLVED"}
+
+
+def _lesson(body: str, *, activity_type: str = "notes") -> str:
+    return (
+        "---\nid: lesson\ntitle: Lesson\n---\n"
+        f":::mcf-activity\ntype: {activity_type}\nid: activity\n:::\n"
+        f"{body}\n:::mcf-end\n"
+    )
+
+
+def test_activity_markers_follow_commonmark_fence_boundaries() -> None:
+    for fence in ("```", "~~~"):
+        issues: list[ValidationIssue] = []
+        lesson = parse_lesson11(
+            _lesson(f"{fence}mcf\n:::mcf-activity\n:::mcf-end\n{fence}"),
+            "lesson.mcf",
+            issues,
+            set(),
+        )
+        assert len(lesson.activities) == 1
+        assert "MCF_ACTIVITY_NESTED" not in {issue.code for issue in issues}
+
+    issues = []
+    parse_lesson11(
+        _lesson(":::mcf-activity\n:::mcf-end"),
+        "lesson.mcf",
+        issues,
+        set(),
+    )
+    assert "MCF_ACTIVITY_NESTED" in {issue.code for issue in issues}
+
+
+def test_nested_source_question_fences_are_literal_and_crlf_is_normalized() -> None:
+    source = _lesson(
+        "````markdown\n```mcf-question\nid: literal\n"
+        "type: true_false\nprompt: Literal?\nanswer: true\n```\n````"
+    ).replace("\n", "\r\n")
+    issues: list[ValidationIssue] = []
+    lesson = parse_lesson11(source, "lesson.mcf", issues, set())
+    assert not lesson.activities[0].questions
+    assert not issues
+
+
+def test_question_yaml_block_scalar_can_contain_shorter_code_fences() -> None:
+    issues: list[ValidationIssue] = []
+    lesson = parse_lesson11(
+        _lesson(
+            "````mcf-question\nid: scalar\n"
+            "type: true_false\nprompt: |\n  Example:\n  ```\n  code\n  ```\n"
+            "answer: true\n````",
+            activity_type="practice",
+        ),
+        "lesson.mcf",
+        issues,
+        set(),
+    )
+    assert [question.id for question in lesson.activities[0].questions] == ["scalar"]
+    assert not issues
+
+
+def test_malformed_question_yaml_has_no_fabricated_followup_diagnostics() -> None:
+    issues: list[ValidationIssue] = []
+    parse_lesson11(
+        _lesson("```mcf-question\n[\n```", activity_type="practice"),
+        "lesson.mcf",
+        issues,
+        set(),
+    )
+    codes = {issue.code for issue in issues}
+    assert "MCF_QUESTION_YAML_INVALID" in codes
+    assert not codes & {
+        "MCF_QUESTION_FIELDS_INVALID",
+        "MCF_ID_INVALID",
+        "MCF_QUESTION_TYPE_UNSUPPORTED",
+    }
+
+
+def _write_reference_package(root: Path, content: str) -> None:
+    (root / "chapters/chapter/lessons").mkdir(parents=True)
+    (root / "manifest.yaml").write_text(
+        'mcf: "1.1"\nkind: course\nid: course\ntitle: Course\nlanguage: en\n'
+        "chapters:\n  - source: chapters/chapter\n",
+        encoding="utf-8",
+    )
+    (root / "chapters/chapter/chapter.yaml").write_text(
+        "id: chapter\ntitle: Chapter\nlessons:\n  - lessons/lesson.mcf\n",
+        encoding="utf-8",
+    )
+    (root / "chapters/chapter/lessons/lesson.mcf").write_text(
+        _lesson(content),
+        encoding="utf-8",
+    )
+
+
+def test_asset_references_are_extracted_only_from_live_markdown(tmp_path: Path) -> None:
+    literal = tmp_path / "literal"
+    _write_reference_package(
+        literal,
+        "`[inline](asset:graph)`\n\n```markdown\n"
+        "![fenced](asset:graph)\n![missing](missing.svg)\n```",
+    )
+    result = validate_package(literal)
+    assert result.valid, result.diagnostics
+    assert compile_course(literal, tmp_path / "compiled").directory.is_dir()
+
+    unresolved = tmp_path / "unresolved"
+    _write_reference_package(unresolved, "![live](asset:graph)")
+    assert "MCF_ASSET_REFERENCE_UNRESOLVED" in {
+        issue.code for issue in validate_package(unresolved).diagnostics
+    }
+
+    missing = tmp_path / "missing"
+    _write_reference_package(missing, "![live](missing.svg)")
+    assert "MCF_FILE_MISSING" in {issue.code for issue in validate_package(missing).diagnostics}
 
 
 def test_typescript_parity_for_canonical_validity_and_principal_codes() -> None:
